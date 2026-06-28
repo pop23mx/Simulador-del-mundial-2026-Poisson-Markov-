@@ -386,14 +386,13 @@ function clearLog() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// PARSEAR RESPUESTA - CORREGIDO
+// PARSEAR RESPUESTA - CORREGIDO (fecha y fase)
 // ═══════════════════════════════════════════════════════════
 function parsearMatches(todosLosMatches, fechaConsulta) {
   const stats = {};
   let totalGoles = 0, totalPartidos = 0;
 
   // 1. Calcular estadísticas con TODOS los partidos FINALIZADOS
-  //    (sin importar la fecha, para tener el mejor modelo posible)
   for (const m of todosLosMatches) {
     if (m.status !== "FINISHED") continue;
     const s = m.score && m.score.fullTime;
@@ -409,7 +408,7 @@ function parsearMatches(todosLosMatches, fechaConsulta) {
     });
   }
 
-  // 2. Construir modelo con estadísticas reales (si hay datos)
+  // 2. Construir modelo con estadísticas reales
   if (totalPartidos > 0) {
     lambda = totalGoles / totalPartidos;
     modelo = {};
@@ -427,7 +426,6 @@ function parsearMatches(todosLosMatches, fechaConsulta) {
     log(`[📊] ${Object.keys(modelo).length} equipos con estadísticas reales (${totalPartidos} partidos)`, "ok");
   } else {
     // 3. Si NO hay partidos finalizados, usar estadísticas por defecto
-    //    para los equipos que aparecen en los partidos programados
     const equiposEnPartidos = new Set();
     for (const m of todosLosMatches) {
       if (m.homeTeam?.tla) equiposEnPartidos.add(m.homeTeam.tla);
@@ -445,10 +443,10 @@ function parsearMatches(todosLosMatches, fechaConsulta) {
         def: 1.0,
       };
     }
-    log(`[ℹ️] Sin partidos finalizados. Usando estadísticas base para ${Object.keys(modelo).length} equipos.`, "info");
+    log(`[ℹ️] Sin partidos finalizados. Usando estadísticas base.`, "info");
   }
 
-  // 4. Filtrar partidos para la fecha consultada
+  // 4. Filtrar partidos para la fecha consultada (USAR fechaConsulta, no la del partido)
   let partidosFiltrados = todosLosMatches
     .filter(m => ["SCHEDULED","TIMED","IN_PLAY","PAUSED","FINISHED"].includes(m.status)
       && modelo[m.homeTeam?.tla] && modelo[m.awayTeam?.tla])
@@ -456,7 +454,16 @@ function parsearMatches(todosLosMatches, fechaConsulta) {
 
   // 5. Aplicar filtro de fase si está seleccionado
   if (faseActual) {
-    partidosFiltrados = partidosFiltrados.filter(m => m.stage === faseActual);
+    // La API usa "stage" para identificar la fase
+    // Para ROUND_OF_32, algunos partidos pueden tener "FIRST_ROUND" o "ROUND_OF_32"
+    partidosFiltrados = partidosFiltrados.filter(m => {
+      const stage = m.stage || "";
+      // Si el filtro es ROUND_OF_32, aceptar también FIRST_ROUND (a veces usado en la API)
+      if (faseActual === "ROUND_OF_32") {
+        return stage === "ROUND_OF_32" || stage === "FIRST_ROUND";
+      }
+      return stage === faseActual;
+    });
   }
 
   partidosFiltrados.sort((a,b) => new Date(a.utcDate) - new Date(b.utcDate));
@@ -800,9 +807,8 @@ async function actualizar() {
 
   try {
     // 1. Obtener TODOS los partidos de la competición (para estadísticas)
-    //    Usamos un rango amplio para capturar todos los partidos jugados
-    const fechaInicio = "2026-06-01"; // Inicio del Mundial
-    const fechaFin = new Date().toISOString().slice(0,10); // Hasta hoy
+    const fechaInicio = "2026-06-01";
+    const fechaFin = new Date().toISOString().slice(0,10);
     const urlStats = PROXY + encodeURIComponent(
       `${BASE_URL}/matches?dateFrom=${fechaInicio}&dateTo=${fechaFin}`
     );
@@ -823,7 +829,6 @@ async function actualizar() {
 
     // 3. Verificar si hay modelo
     if (Object.keys(modelo).length === 0) {
-      // Si no hay modelo, usar estadísticas por defecto para los equipos
       const equiposEnPartidos = new Set();
       for (const m of todosLosMatches) {
         if (m.homeTeam?.tla) equiposEnPartidos.add(m.homeTeam.tla);
