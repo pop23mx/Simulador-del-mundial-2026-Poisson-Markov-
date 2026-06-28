@@ -781,18 +781,19 @@ function mostrarMensaje(mensaje, tipo = "info", detalle = "", solucion = "") {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ACTUALIZAR DATOS - CORREGIDO
+// ACTUALIZAR DATOS - CORREGIDO (fecha fija)
 // ═══════════════════════════════════════════════════════════
 async function actualizar() {
   const btn = document.getElementById("btn-actualizar");
   btn.disabled = true; btn.textContent = "⏳ DESCARGANDO...";
   clearLog();
 
-  const fechaStr = obtenerFechaDesdeSelector();
+  // Obtener la fecha SELECCIONADA (sin conversión de zona horaria)
+  const fechaSeleccionada = obtenerFechaDesdeSelector();
   const faseStr = faseActual ? `&stage=${faseActual}` : "";
 
   log("[◉] Conectando a football-data.org...", "info");
-  log(`[→] Consultando partidos para: ${fechaStr}${faseActual ? " · Fase: "+faseActual : ""}`, "info");
+  log(`[→] Consultando partidos para: ${fechaSeleccionada}${faseActual ? " · Fase: "+faseActual : ""}`, "info");
 
   // Limpiar datos previos
   modelo = {};
@@ -824,8 +825,8 @@ async function actualizar() {
     log(`[✓] ${todosLosMatches.length} partidos totales descargados`, "ok");
 
     // 2. Procesar estadísticas con TODOS los partidos
-    const fechaConsulta = fechaStr;
-    const { totalGoles, totalPartidos } = parsearMatches(todosLosMatches, fechaConsulta);
+    // PASAMOS la fecha seleccionada para filtrar
+    const { totalGoles, totalPartidos } = parsearMatches(todosLosMatches, fechaSeleccionada);
 
     // 3. Verificar si hay modelo
     if (Object.keys(modelo).length === 0) {
@@ -851,9 +852,8 @@ async function actualizar() {
 
     // 4. Verificar partidos para la fecha consultada
     if (partidos.length === 0) {
-      const fechaDisplay = new Date(fechaStr).toLocaleDateString("es-MX", {
-        timeZone: "America/Mexico_City"
-      });
+      // Mostrar la fecha seleccionada (no la convertida)
+      const fechaDisplay = fechaSeleccionada.split("-").reverse().join("/");
       const faseDisplay = document.getElementById("fase-select")
         .options[document.getElementById("fase-select").selectedIndex]?.text || "todas";
 
@@ -871,10 +871,8 @@ async function actualizar() {
       return;
     }
 
-    // 5. Mostrar resultados
-    const fechaStrDisplay = new Date(fechaStr).toLocaleDateString("es-MX", {
-      timeZone: "America/Mexico_City"
-    });
+    // 5. Mostrar resultados - USAR LA FECHA SELECCIONADA
+    const fechaDisplay = fechaSeleccionada.split("-").reverse().join("/");
 
     if (totalPartidos > 0) {
       log(`[✓] ${Object.keys(modelo).length} equipos · λ=${lambda.toFixed(3)} goles/partido (${totalPartidos} partidos)`, "ok");
@@ -882,7 +880,7 @@ async function actualizar() {
     } else {
       log(`[✓] ${Object.keys(modelo).length} equipos · λ=${lambda.toFixed(3)} (estimado)`, "ok");
     }
-    log(`[✓] ${partidos.length} partidos · ${fechaStrDisplay}`, "ok");
+    log(`[✓] ${partidos.length} partidos · ${fechaDisplay}`, "ok");
     if (partidos.length > 0) {
       const estados = partidos.filter(p => p.estado === "IN_PLAY").length;
       if (estados > 0) log(`[⚡] ${estados} partido(s) en vivo`, "info");
@@ -894,7 +892,7 @@ async function actualizar() {
     document.getElementById("badge-lambda").textContent = "λ=" + lambda.toFixed(3);
     document.getElementById("meta-txt").style.display = "inline";
     document.getElementById("meta-txt").textContent =
-      (totalPartidos > 0 ? totalPartidos + " partidos históricos · " + totalGoles + " goles · " : "") + fechaStrDisplay;
+      (totalPartidos > 0 ? totalPartidos + " partidos históricos · " + totalGoles + " goles · " : "") + fechaDisplay;
     document.getElementById("btn-tabla").style.display = "inline-block";
 
     renderPartidos();
