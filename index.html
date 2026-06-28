@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>⚽ Simulador Mundial 2026</title>
 <style>
+  /* ... (mismo CSS que antes, sin cambios) ... */
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --bg:#0a0e1a; --card:#1a2235; --border:#1e2d45;
@@ -235,9 +236,14 @@
 const API_KEY  = "c26247054a384dab8d890badd4a6e6e2";
 const BASE_URL = "https://api.football-data.org/v4/competitions/WC";
 
-// 🔧 PROXY CORS QUE SÍ FUNCIONA
-// Usa api.allorigins.win que es más estable
-const CORS_PROXY = "https://api.allorigins.win/raw?url=";
+// 🔧 LISTA DE PROXIES CORS PARA PROBAR AUTOMÁTICAMENTE
+const PROXIES = [
+  { name: "api.allorigins.win", url: "https://api.allorigins.win/raw?url=" },
+  { name: "thingproxy", url: "https://thingproxy.freeboard.io/fetch/" },
+  { name: "corsproxy.io", url: "https://corsproxy.io/?" },
+  { name: "cors-anywhere", url: "https://cors-anywhere.herokuapp.com/" },
+  { name: "proxy.cors.sh", url: "https://proxy.cors.sh/" }
+];
 
 // ═══════════════════════════════════════════════════════════
 // DATOS
@@ -604,20 +610,20 @@ function renderTabla() {
 // ═══════════════════════════════════════════════════════════
 // MOSTRAR ERROR EN PANTALLA
 // ═══════════════════════════════════════════════════════════
-function mostrarError(mensaje, detalle = "") {
+function mostrarError(mensaje, detalle = "", solucion = "") {
   document.getElementById("panel-resultado").innerHTML = `
     <div class="card" style="border-color:var(--red);">
       <div style="text-align:center;padding:20px 10px;">
         <div class="error-icon">🚫</div>
         <div class="error-msg">${mensaje}</div>
         ${detalle ? `<div style="color:var(--muted);font-size:10px;margin-top:8px;">${detalle}</div>` : ""}
+        ${solucion ? `<div style="color:var(--blue);font-size:10px;margin-top:12px;">💡 ${solucion}</div>` : ""}
         <div style="margin-top:16px;font-size:10px;color:var(--muted);">
           <div>📌 Posibles causas:</div>
           <div style="text-align:left;display:inline-block;margin-top:6px;line-height:1.8;">
-            • Sin conexión a internet<br>
-            • El servidor de la API no responde<br>
-            • CORS bloquea la petición (usa Firefox o Chrome)<br>
-            • Límite de peticiones alcanzado (espera 1 minuto)
+            • ${mensaje.includes("403") ? "Tu plan gratuito no incluye el Mundial 2026" : "Sin conexión a internet"}<br>
+            • ${mensaje.includes("403") ? "Necesitas una suscripción de pago" : "El servidor de la API no responde"}<br>
+            • ${mensaje.includes("403") ? "Prueba con otra competición (ej: 'CL' para Champions)" : "CORS bloquea la petición (usa Firefox o Chrome)"}
           </div>
           <div style="margin-top:12px;color:var(--blue);">
             🔄 Presiona el botón verde para reintentar
@@ -629,14 +635,13 @@ function mostrarError(mensaje, detalle = "") {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ACCIONES
+// 🔧 FUNCIÓN PRINCIPAL: PROBAR PROXIES AUTOMÁTICAMENTE
 // ═══════════════════════════════════════════════════════════
-async function actualizar() {
+async function probarProxies() {
   const btn = document.getElementById("btn-actualizar");
-  btn.disabled = true; btn.textContent = "⏳ DESCARGANDO...";
+  btn.disabled = true; btn.textContent = "⏳ PROBANDO PROXIES...";
   clearLog();
-  log("[◉] Conectando a football-data.org...", "info");
-  log("[→] Usando proxy CORS: api.allorigins.win", "info");
+  log("[◉] Probando " + PROXIES.length + " proxies CORS...", "info");
 
   // Limpiar datos previos
   modelo = {};
@@ -649,100 +654,126 @@ async function actualizar() {
   document.getElementById("badge-lambda").style.display = "none";
   document.getElementById("meta-txt").style.display = "none";
 
-  try {
-    const url = CORS_PROXY + encodeURIComponent(BASE_URL + "/matches");
-    log("[→] GET " + url, "info");
+  let ultimoError = null;
 
-    const resp = await fetch(url, {
-      headers: { "X-Auth-Token": API_KEY }
-    });
+  for (let i = 0; i < PROXIES.length; i++) {
+    const proxy = PROXIES[i];
+    log(`[→] Probando proxy ${i+1}/${PROXIES.length}: ${proxy.name}`, "info");
+    
+    try {
+      const url = proxy.url + encodeURIComponent(BASE_URL + "/matches");
+      log(`[→] GET ${url}`, "muted");
 
-    if(!resp.ok) {
-      let errMsg = "";
-      try {
-        const err = await resp.json();
-        errMsg = err.message || err.error || "";
-      } catch(e) {}
-      throw new Error("HTTP "+resp.status + (errMsg ? ": "+errMsg : ""));
+      const resp = await fetch(url, {
+        headers: { "X-Auth-Token": API_KEY }
+      });
+
+      // Si la respuesta es exitosa (200), procesar datos
+      if (resp.ok) {
+        const data = await resp.json();
+        const matches = data.matches || [];
+        log(`[✓] Proxy ${proxy.name} FUNCIONA!`, "ok");
+        log(`[✓] ${matches.length} partidos descargados`, "ok");
+
+        const { totalGoles, totalPartidos } = parsearMatches(matches);
+
+        if (Object.keys(modelo).length < 4) {
+          throw new Error("Datos insuficientes");
+        }
+
+        const today = new Date().toISOString().slice(0,10);
+        const hoy = partidos.filter(p => p.fecha === today);
+        const fechaStr = new Date().toLocaleString("es-MX", {
+          timeZone: "America/Mexico_City"
+        });
+
+        log(`[✓] ${Object.keys(modelo).length} equipos · λ=${lambda.toFixed(3)} goles/partido`, "ok");
+        log(`[✓] ${partidos.length} partidos` + (hoy.length > 0 ? ` · ${hoy.length} HOY` : " (próximos)"), "ok");
+        log("──────────────────────────────────────", "muted");
+        log("▶ Selecciona un partido para simular", "normal");
+
+        // Actualizar UI con éxito
+        document.getElementById("badge-real").style.display = "inline-block";
+        document.getElementById("badge-lambda").style.display = "inline-block";
+        document.getElementById("badge-lambda").textContent = "λ=" + lambda.toFixed(3);
+        document.getElementById("meta-txt").style.display = "inline";
+        document.getElementById("meta-txt").textContent =
+          totalPartidos + " partidos · " + totalGoles + " goles · " + fechaStr;
+        document.getElementById("btn-tabla").style.display = "inline-block";
+
+        renderPartidos();
+        renderTabla();
+        document.getElementById("panel-resultado").innerHTML =
+          `<div class="placeholder"><div class="icon">⚽</div>
+           <div>Selecciona un partido para simular</div>`;
+
+        btn.disabled = false;
+        btn.textContent = "🔄 ACTUALIZAR DATOS";
+        return true;
+      } else {
+        // Intentar leer el mensaje de error
+        let errMsg = "";
+        try {
+          const err = await resp.json();
+          errMsg = err.message || err.error || "";
+        } catch(e) {}
+        log(`[✗] Proxy ${proxy.name} falló: HTTP ${resp.status} ${errMsg}`, "error");
+        ultimoError = { status: resp.status, message: errMsg, proxy: proxy.name };
+      }
+    } catch (err) {
+      log(`[✗] Proxy ${proxy.name} falló: ${err.message}`, "error");
+      ultimoError = { status: "network", message: err.message, proxy: proxy.name };
     }
-
-    const data = await resp.json();
-    const matches = data.matches || [];
-    log("[✓] "+matches.length+" partidos descargados", "ok");
-
-    const { totalGoles, totalPartidos } = parsearMatches(matches);
-
-    // Verificar si hay suficientes datos
-    if(Object.keys(modelo).length < 4) {
-      throw new Error("Datos insuficientes. El Mundial aún no ha comenzado o no hay partidos finalizados.");
-    }
-
-    const today = new Date().toISOString().slice(0,10);
-    const hoy = partidos.filter(p => p.fecha === today);
-    const fechaStr = new Date().toLocaleString("es-MX", {
-      timeZone: "America/Mexico_City"
-    });
-
-    log("[✓] "+Object.keys(modelo).length+" equipos · λ="+lambda.toFixed(3)+" goles/partido", "ok");
-    log("[✓] "+partidos.length+" partidos"+(hoy.length>0?" · "+hoy.length+" HOY":" (próximos)"), "ok");
-    log("──────────────────────────────────────", "muted");
-    log("▶ Selecciona un partido para simular", "normal");
-
-    // Actualizar UI
-    document.getElementById("badge-real").style.display = "inline-block";
-    document.getElementById("badge-lambda").style.display = "inline-block";
-    document.getElementById("badge-lambda").textContent = "λ="+lambda.toFixed(3);
-    document.getElementById("meta-txt").style.display = "inline";
-    document.getElementById("meta-txt").textContent =
-      totalPartidos+" partidos · "+totalGoles+" goles · "+fechaStr;
-    document.getElementById("btn-tabla").style.display = "inline-block";
-
-    renderPartidos();
-    renderTabla();
-    document.getElementById("panel-resultado").innerHTML =
-      `<div class="placeholder"><div class="icon">⚽</div>
-       <div>Selecciona un partido para simular</div></div>`;
-
-  } catch(err) {
-    log("[✗] ERROR: "+err.message, "error");
-
-    // Mensajes específicos según el error
-    let mensajeError = "No se pudieron cargar los datos";
-    let detalleError = "";
-
-    if(err.message.includes("Failed to fetch") || err.message.includes("NetworkError")) {
-      mensajeError = "❌ Error de conexión";
-      detalleError = "No se pudo conectar con el servidor de football-data.org";
-      log("[!] Sin conexión a internet o CORS bloqueado", "error");
-      log("[!] Abre esta página desde Firefox o Chrome", "error");
-    } else if(err.message.includes("403")) {
-      mensajeError = "🔑 API key inválida o sin permisos";
-      detalleError = "Verifica tu API key en football-data.org";
-      log("[!] API key inválida o sin permisos para el Mundial", "error");
-    } else if(err.message.includes("404")) {
-      mensajeError = "📭 Competición no encontrada";
-      detalleError = "El código 'WC' podría no ser válido para el Mundial 2026";
-      log("[!] Competición 'WC' no encontrada", "error");
-    } else if(err.message.includes("429")) {
-      mensajeError = "⏳ Límite de peticiones alcanzado";
-      detalleError = "Espera 1 minuto y vuelve a intentar";
-      log("[!] Límite de peticiones alcanzado", "error");
-    } else if(err.message.includes("Datos insuficientes")) {
-      mensajeError = "📊 Datos insuficientes";
-      detalleError = "El Mundial 2026 aún no ha comenzado o no hay partidos finalizados";
-      log("[!] "+err.message, "error");
-    } else {
-      mensajeError = "⚠️ Error desconocido";
-      detalleError = err.message;
-      log("[!] "+err.message, "error");
-    }
-
-    mostrarError(mensajeError, detalleError);
-    renderPartidos();
   }
 
+  // Si llegamos aquí, todos los proxies fallaron
   btn.disabled = false;
   btn.textContent = "🔄 ACTUALIZAR DATOS";
+
+  // Mostrar mensaje de error final
+  let mensajeError = "❌ No se pudo conectar con la API";
+  let detalleError = "Se probaron " + PROXIES.length + " proxies CORS y todos fallaron.";
+  let solucion = "";
+
+  if (ultimoError) {
+    detalleError += `\nÚltimo error: ${ultimoError.proxy} → ${ultimoError.status}`;
+    
+    if (ultimoError.status === 403) {
+      mensajeError = "🔒 Acceso denegado (403)";
+      detalleError = "Tu plan gratuito de football-data.org no tiene acceso al Mundial 2026.";
+      solucion = "Prueba con otra competición como 'CL' (Champions League) o contrata un plan de pago.";
+    } else if (ultimoError.status === 404) {
+      mensajeError = "📭 Competición no encontrada (404)";
+      detalleError = "El código 'WC' no es válido para el Mundial 2026 en tu plan.";
+      solucion = "Prueba con 'CL' para Champions League o 'PL' para Premier League.";
+    } else if (ultimoError.status === 429) {
+      mensajeError = "⏳ Límite de peticiones (429)";
+      detalleError = "Has superado el límite de peticiones del plan gratuito.";
+      solucion = "Espera 1 minuto y vuelve a intentar.";
+    } else if (ultimoError.status === "network") {
+      mensajeError = "🌐 Error de red";
+      detalleError = "No se pudo establecer conexión con ningún servidor.";
+      solucion = "Verifica tu conexión a internet o prueba con otro navegador.";
+    }
+  } else {
+    mensajeError = "❌ Error desconocido";
+    detalleError = "No se pudo determinar la causa del error.";
+  }
+
+  log(`[✗] TODOS LOS PROXIES FALLARON`, "error");
+  log(`[!] ${mensajeError}`, "error");
+  if (solucion) log(`[!] ${solucion}`, "warn");
+
+  mostrarError(mensajeError, detalleError, solucion);
+  renderPartidos();
+  return false;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ACCIÓN: ACTUALIZAR (llama a probarProxies)
+// ═══════════════════════════════════════════════════════════
+async function actualizar() {
+  await probarProxies();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -804,7 +835,7 @@ function toggleTabla() {
 // ═══════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', function() {
   log("▶ Presiona 'ACTUALIZAR DATOS' para conectar con la API", "normal");
-  log("▶ Usando proxy: api.allorigins.win", "muted");
+  log("▶ Se probarán " + PROXIES.length + " proxies automáticamente", "muted");
 });
 </script>
 </body>
