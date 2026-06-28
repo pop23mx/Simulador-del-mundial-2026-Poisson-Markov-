@@ -115,6 +115,7 @@
   .placeholder .error-icon { font-size:30px; margin-bottom:6px; }
   .error-msg { color:var(--red); font-weight:700; margin:8px 0; }
   .error-hint { color:var(--muted); font-size:9px; margin-top:4px; }
+  .info-msg { color:var(--blue); font-weight:700; margin:8px 0; }
 
   .filtros { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:6px; }
   .filtros select, .filtros input { background:var(--bg); color:var(--text);
@@ -158,7 +159,7 @@
     <span id="meta-txt" style="color:var(--muted);font-size:8px;display:none"></span>
   </div>
 
-  <!-- FILTROS -->
+  <!-- FILTROS - SIEMPRE VISIBLES -->
   <div class="card" id="filtros-card">
     <div class="label">FILTROS DE PARTIDOS</div>
     <div class="filtros">
@@ -349,16 +350,23 @@ function cambiarFecha() {
     custom.classList.add("hidden");
   }
   fechaActual = select.value;
-  actualizar();
+  // Si ya hay datos cargados, actualizar
+  if (Object.keys(modelo).length > 0) {
+    actualizar();
+  }
 }
 
 function cambiarFechaCustom() {
-  actualizar();
+  if (Object.keys(modelo).length > 0) {
+    actualizar();
+  }
 }
 
 function cambiarFase() {
   faseActual = document.getElementById("fase-select").value;
-  actualizar();
+  if (Object.keys(modelo).length > 0) {
+    actualizar();
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -702,21 +710,24 @@ function renderTabla() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// MOSTRAR ERROR
+// MOSTRAR INFORMACIÓN O ERROR
 // ═══════════════════════════════════════════════════════════
-function mostrarError(mensaje, detalle = "", solucion = "") {
+function mostrarMensaje(mensaje, tipo = "info", detalle = "", solucion = "") {
+  const color = tipo === "error" ? "var(--red)" : "var(--blue)";
+  const icono = tipo === "error" ? "🚫" : "ℹ️";
   document.getElementById("panel-resultado").innerHTML = `
-    <div class="card" style="border-color:var(--red);">
+    <div class="card" style="border-color:${color};">
       <div style="text-align:center;padding:15px 10px;">
-        <div class="error-icon">🚫</div>
-        <div class="error-msg">${mensaje}</div>
+        <div class="${tipo === "error" ? "error-icon" : "icon"}">${icono}</div>
+        <div class="${tipo === "error" ? "error-msg" : "info-msg"}">${mensaje}</div>
         ${detalle ? `<div style="color:var(--muted);font-size:9px;margin-top:6px;">${detalle}</div>` : ""}
         ${solucion ? `<div style="color:var(--blue);font-size:9px;margin-top:10px;">💡 ${solucion}</div>` : ""}
+        ${tipo === "error" ? `
         <div style="margin-top:12px;font-size:9px;color:var(--muted);">
           <div style="margin-top:8px;color:var(--blue);">
             🔄 Presiona el botón verde para reintentar
           </div>
-        </div>
+        </div>` : ""}
       </div>
     </div>
   `;
@@ -765,12 +776,110 @@ async function actualizar() {
     const matches = data.matches || [];
     log(`[✓] ${matches.length} partidos descargados`, "ok");
 
-    const { totalGoles, totalPartidos } = parsearMatches(matches);
+    // Si no hay partidos, mostrar mensaje informativo
+    if (matches.length === 0) {
+      const fechaDisplay = new Date(fechaStr).toLocaleDateString("es-MX", {
+        timeZone: "America/Mexico_City"
+      });
+      const faseDisplay = document.getElementById("fase-select")
+        .options[document.getElementById("fase-select").selectedIndex]?.text || "todas";
 
-    if (Object.keys(modelo).length < 4) {
-      throw new Error("Datos insuficientes. El Mundial aún no ha comenzado o no hay partidos finalizados.");
+      log(`[ℹ️] No hay partidos programados para ${fechaDisplay} en ${faseDisplay}`, "info");
+      mostrarMensaje(
+        "📭 No hay partidos programados",
+        "info",
+        `Para el ${fechaDisplay} en la fase "${faseDisplay}" no hay partidos disponibles.`,
+        "Prueba con otra fecha o fase."
+      );
+      renderPartidos();
+      btn.disabled = false;
+      btn.textContent = "🔄 ACTUALIZAR DATOS";
+      return;
     }
 
+    const { totalGoles, totalPartidos } = parsearMatches(matches);
+
+    // Si no se pudieron procesar los datos (0 equipos)
+    if (Object.keys(modelo).length < 4) {
+      log(`[⚠️] Datos insuficientes: ${Object.keys(modelo).length} equipos procesados`, "warn");
+      mostrarMensaje(
+        "📊 Datos insuficientes",
+        "info",
+        "El Mundial 2026 aún no ha comenzado o no hay partidos finalizados para calcular estadísticas.",
+        "Los partidos programados se mostrarán, pero las simulaciones usarán estadísticas por defecto."
+      );
+      // Intentar usar estadísticas por defecto para los equipos
+      const equiposEnPartidos = new Set();
+      for (const m of matches) {
+        const tlaH = m.homeTeam?.tla;
+        const tlaA = m.awayTeam?.tla;
+        if (tlaH) equiposEnPartidos.add(tlaH);
+        if (tlaA) equiposEnPartidos.add(tlaA);
+      }
+      // Crear modelo básico para los equipos
+      for (const tla of equiposEnPartidos) {
+        if (!modelo[tla]) {
+          modelo[tla] = { nom: getNom(tla), gf: 0, gc: 0, pj: 0, atk: 1.0, def: 1.0 };
+        }
+      }
+      lambda = 2.95;
+      
+      // Procesar partidos programados
+      const fechaStrLocal = obtenerFechaDesdeSelector();
+      let partidosFiltrados = matches
+        .filter(m => ["SCHEDULED","TIMED","IN_PLAY","PAUSED","FINISHED"].includes(m.status)
+          && modelo[m.homeTeam?.tla] && modelo[m.awayTeam?.tla])
+        .filter(m => m.utcDate.slice(0,10) === fechaStrLocal);
+
+      if (faseActual) {
+        partidosFiltrados = partidosFiltrados.filter(m => m.stage === faseActual);
+      }
+
+      partidosFiltrados.sort((a,b) => new Date(a.utcDate) - new Date(b.utcDate));
+
+      partidos = partidosFiltrados.map(m => {
+        const utc = new Date(m.utcDate);
+        let hora = "";
+        try { hora = utc.toLocaleTimeString("es-MX",
+          {hour:"2-digit",minute:"2-digit",timeZone:"America/Mexico_City"}); }
+        catch(e) { hora = utc.toUTCString().slice(17,22)+" UTC"; }
+        return { local:m.homeTeam.tla, visita:m.awayTeam.tla,
+          grupo:m.group||m.stage||"", fecha:m.utcDate.slice(0,10), hora,
+          estado:m.status };
+      });
+
+      const fechaStrDisplay = new Date(fechaStr).toLocaleDateString("es-MX", {
+        timeZone: "America/Mexico_City"
+      });
+
+      log(`[✓] ${partidos.length} partidos programados para ${fechaStrDisplay}`, "ok");
+      log(`[ℹ️] ${Object.keys(modelo).length} equipos (sin estadísticas completas)`, "info");
+      log("──────────────────────────────────────", "muted");
+      log("▶ Selecciona un partido para simular (estadísticas base)", "normal");
+
+      document.getElementById("badge-lambda").style.display = "inline-block";
+      document.getElementById("badge-lambda").textContent = "λ=2.95 (estimado)";
+      document.getElementById("btn-tabla").style.display = "inline-block";
+
+      renderPartidos();
+      // No renderizar tabla (no hay datos)
+      document.getElementById("tabla-body").innerHTML = 
+        `<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:20px;">
+          No hay estadísticas disponibles aún
+        </td></tr>`;
+      document.getElementById("panel-resultado").innerHTML =
+        `<div class="placeholder"><div class="icon">⚽</div>
+         <div>Selecciona un partido para simular</div>
+         <div style="font-size:8px;color:var(--muted);margin-top:4px;">
+           Usando estadísticas base (sin datos históricos)
+         </div></div>`;
+      
+      btn.disabled = false;
+      btn.textContent = "🔄 ACTUALIZAR DATOS";
+      return;
+    }
+
+    // Datos completos - procesamiento normal
     const hoy = partidos.filter(p => p.fecha === new Date().toISOString().slice(0,10));
     const fechaStrDisplay = new Date(fechaStr).toLocaleDateString("es-MX", {
       timeZone: "America/Mexico_City"
@@ -830,7 +939,7 @@ async function actualizar() {
     log(`[!] ${mensajeError}`, "error");
     if (solucion) log(`[!] ${solucion}`, "warn");
 
-    mostrarError(mensajeError, detalleError, solucion);
+    mostrarMensaje(mensajeError, "error", detalleError, solucion);
     renderPartidos();
   }
 
@@ -892,7 +1001,7 @@ function toggleTabla() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// INICIO
+// INICIO - LOS FILTROS YA SON VISIBLES DESDE EL PRINCIPIO
 // ═══════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', function() {
   // Configurar fecha por defecto
@@ -900,8 +1009,9 @@ document.addEventListener('DOMContentLoaded', function() {
   custom.value = new Date().toISOString().slice(0,10);
   custom.classList.add("hidden");
 
-  log("▶ Presiona 'ACTUALIZAR DATOS' para conectar con la API", "normal");
-  log("▶ Usa los filtros para ver partidos de otras fechas o fases", "muted");
+  // Los filtros ya son visibles desde el HTML
+  log("▶ Los filtros están disponibles para seleccionar fecha y fase", "normal");
+  log("▶ Presiona 'ACTUALIZAR DATOS' para cargar los partidos", "muted");
 });
 </script>
 </body>
