@@ -19,7 +19,6 @@
   .header p  { font-size:10px; color:var(--muted); margin-top:3px; }
   .wrap { max-width:860px; margin:0 auto; padding:16px 20px; }
 
-  /* Botones */
   .btn { border:none; border-radius:6px; padding:10px 16px; font-family:inherit;
     font-weight:700; font-size:12px; cursor:pointer; transition:opacity .15s; }
   .btn:disabled { opacity:.5; cursor:not-allowed; }
@@ -36,7 +35,6 @@
     color:var(--purple); border-radius:4px; padding:4px 10px;
     font-family:inherit; font-size:9px; cursor:pointer; }
 
-  /* Cards */
   .card { background:var(--card); border:1px solid var(--border);
     border-radius:8px; padding:14px 16px; margin-bottom:10px; }
   .card-dark { background:#050a10; border:1px solid var(--border);
@@ -44,22 +42,18 @@
   .label { font-size:9px; color:var(--muted); letter-spacing:1px;
     text-transform:uppercase; margin-bottom:8px; }
 
-  /* Badges */
   .badge { display:inline-block; font-size:9px; font-weight:700;
     padding:2px 8px; border-radius:3px; letter-spacing:1px; }
 
-  /* Barra superior de controles */
   .top-bar { display:flex; gap:10px; align-items:center;
     margin-bottom:14px; flex-wrap:wrap; }
 
-  /* Grid */
   .grid { display:grid; grid-template-columns:250px 1fr; gap:12px; }
   @media(max-width:600px){
     .grid { grid-template-columns:1fr; }
     .header h1 { font-size:13px; }
   }
 
-  /* Checkbox custom */
   .check-row { display:flex; align-items:center; gap:8px; cursor:pointer;
     font-size:10px; padding:5px 0; user-select:none; }
   .check-box { width:14px; height:14px; border-radius:3px; flex-shrink:0;
@@ -67,7 +61,6 @@
   .check-box.on { background:var(--green); border-color:var(--green); }
   .check-box.on-purple { background:var(--purple); border-color:var(--purple); }
 
-  /* Botones de partido */
   .match-btn { background:var(--bg); color:var(--text);
     border:1px solid var(--border); border-radius:5px; padding:9px 10px;
     font-family:inherit; font-size:10px; cursor:pointer; width:100%;
@@ -80,34 +73,28 @@
     border-radius:2px; background:rgba(0,230,118,.15); color:var(--green); }
   .match-btn.active .hoy-badge { background:rgba(0,0,0,.2); color:#000; }
 
-  /* Barras de probabilidad */
   .bar-wrap { margin-bottom:9px; }
   .bar-label { display:flex; justify-content:space-between;
     font-size:11px; margin-bottom:3px; }
   .bar-track { background:var(--border); border-radius:4px; height:7px; overflow:hidden; }
   .bar-fill  { height:100%; border-radius:4px; transition:width .5s ease; }
 
-  /* Grid 2 columnas para stats */
   .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
 
-  /* Top marcadores */
   .marcador-chip { border:1px solid var(--border); border-radius:4px;
     padding:3px 10px; text-align:center; display:inline-block; }
   .marcador-chip.top { border-color:var(--green); background:rgba(0,230,118,.1); }
   .marcador-chips { display:flex; gap:5px; flex-wrap:wrap; margin-top:4px; }
 
-  /* Consola */
   .console { background:#050a10; border-radius:6px; padding:10px 12px;
     max-height:150px; overflow-y:auto; font-size:11px; line-height:1.8; }
 
-  /* Tabla */
   .tabla-wrap { overflow-x:auto; }
   table { width:100%; border-collapse:collapse; font-size:10px; }
   th { padding:3px 8px; font-size:9px; font-weight:600; color:var(--muted);
     border-bottom:1px solid var(--border); }
   td { padding:4px 8px; border-bottom:1px solid rgba(30,45,69,.4); }
 
-  /* Ejemplo penales */
   .pen-seq { background:#050a10; border:1px solid var(--border);
     border-radius:5px; padding:8px 10px; margin-top:6px; font-size:11px; }
   .pen-row { display:flex; gap:5px; margin-bottom:3px; align-items:center; }
@@ -115,18 +102,19 @@
   .pen-ok  { color:var(--green); font-weight:700; }
   .pen-no  { color:var(--red);   font-weight:700; }
 
-  /* Leyenda inferior */
   .legend { background:var(--card); border:1px solid var(--border);
     border-radius:8px; padding:10px 14px; margin-top:10px;
     font-size:9px; color:var(--muted); line-height:2; }
   .leg-badge { background:var(--border); font-size:8px; font-weight:700;
     padding:1px 6px; border-radius:2px; margin-right:6px; }
 
-  /* Placeholder */
   .placeholder { background:var(--card); border:1px solid var(--border);
     border-radius:8px; padding:40px 20px; text-align:center;
     color:var(--muted); font-size:11px; }
   .placeholder .icon { font-size:28px; margin-bottom:8px; }
+  .placeholder .error-icon { font-size:36px; margin-bottom:8px; }
+  .error-msg { color:var(--red); font-weight:700; margin:10px 0; }
+  .error-hint { color:var(--muted); font-size:10px; margin-top:6px; }
 
   #hidden-table { display:none; }
 </style>
@@ -247,6 +235,9 @@
 const API_KEY  = "c26247054a384dab8d890badd4a6e6e2";
 const BASE_URL = "https://api.football-data.org/v4/competitions/WC";
 
+// Proxy CORS para evitar el error "Failed to fetch"
+const CORS_PROXY = "https://corsproxy.io/?";
+
 // ═══════════════════════════════════════════════════════════
 // DATOS
 // ═══════════════════════════════════════════════════════════
@@ -290,7 +281,7 @@ let tablaVisible = false;
 // ═══════════════════════════════════════════════════════════
 // LOG
 // ═══════════════════════════════════════════════════════════
-const COLORS = { ok:"#00e676", warn:"#ffab00", info:"#29b6f6",
+const COLORS = { ok:"#00e676", warn:"#ffab00", error:"#ff3d57", info:"#29b6f6",
                  muted:"#607d9f", normal:"#00e676" };
 function log(msg, tipo="normal") {
   const c = document.getElementById("consola");
@@ -471,254 +462,4 @@ function renderResultado() {
         <div style="font-size:9px;color:var(--muted);margin-bottom:8px">⚙ PARÁMETROS</div>
         <div style="display:flex;gap:20px;font-size:11px;margin-bottom:10px">
           <span><span style="color:var(--muted)">λL </span>
-            <span style="color:var(--green);font-weight:700">${r.lambdaL.toFixed(3)}</span></span>
-          <span><span style="color:var(--muted)">λV </span>
-            <span style="color:var(--red);font-weight:700">${r.lambdaV.toFixed(3)}</span></span>
-          <span><span style="color:var(--muted)">E[G] </span>
-            <span style="color:var(--amber);font-weight:700">${r.goles.toFixed(2)}</span></span>
-        </div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:6px">TOP 5 MARCADORES</div>
-        <div class="marcador-chips">${chips}</div>
-      </div>
-      ${botonPenales}
-    </div>`;
-}
-
-function renderPenales() {
-  if(!resPenActivo) return "";
-  const rp = resPenActivo;
-  const nomL = modelo[partidoActivo.local].nom;
-  const nomV = modelo[partidoActivo.visita].nom;
-  const nomLc = nomL.split(" ")[0], nomVc = nomV.split(" ")[0];
-
-  const ejemplosHTML = rp.ejemplos.map(e => {
-    const seqL = e.sL.map(r =>
-      `<span class="${r==="✓"||r==="⊕"?"pen-ok":"pen-no"}">${r}</span>`).join("");
-    const seqV = e.sV.map(r =>
-      `<span class="${r==="✓"||r==="⊕"?"pen-ok":"pen-no"}">${r}</span>`).join("");
-    const muerteSudita = e.sL.some(r=>r==="⊕"||r==="⊗");
-    return `<div class="pen-seq">
-      <div class="pen-row"><span class="pen-lbl">LOC</span>${seqL}
-        <span style="color:var(--muted);margin-left:4px;font-size:10px">${e.gL}</span></div>
-      <div class="pen-row"><span class="pen-lbl">VIS</span>${seqV}
-        <span style="color:var(--muted);margin-left:4px;font-size:10px">${e.gV}</span></div>
-      <div style="font-size:9px;color:var(--purple);margin-top:3px">
-        Avanza: ${e.ganL?nomLc:nomVc}${muerteSudita?" · Fue a muerte súbita":""}
-      </div>
-    </div>`;
-  }).join("");
-
-  return `<div style="background:var(--card);border:1px solid rgba(206,147,216,.35);
-      border-radius:8px;padding:14px 16px;margin-top:10px">
-    <div style="text-align:center;margin-bottom:10px">
-      <span class="badge" style="background:var(--purple);color:#000">
-        TANDA DE PENALES · n=50,000
-      </span>
-      <div style="font-size:12px;font-weight:700;margin-top:6px">
-        ${nomL} <span style="color:var(--muted)">vs</span> ${nomV}
-      </div>
-    </div>
-    ${barra(""+nomLc+" avanza", rp.pL, "var(--green)")}
-    ${barra(""+nomVc+" avanza", rp.pV, "var(--red)")}
-    <div class="grid2" style="margin-top:10px;margin-bottom:10px">
-      <div class="card-dark">
-        <div style="font-size:9px;color:var(--muted);margin-bottom:4px">${nomLc}</div>
-        <div style="font-size:11px">
-          <div>🎯 Conv.: <span style="color:var(--green);font-weight:700">${rp.pGolL.toFixed(1)}%</span></div>
-          <div>🧤 Para rival: <span style="color:var(--blue);font-weight:700">${rp.pParaV.toFixed(1)}%</span></div>
-        </div>
-      </div>
-      <div class="card-dark">
-        <div style="font-size:9px;color:var(--muted);margin-bottom:4px">${nomVc}</div>
-        <div style="font-size:11px">
-          <div>🎯 Conv.: <span style="color:var(--red);font-weight:700">${rp.pGolV.toFixed(1)}%</span></div>
-          <div>🧤 Para rival: <span style="color:var(--blue);font-weight:700">${rp.pParaL.toFixed(1)}%</span></div>
-        </div>
-      </div>
-    </div>
-    <div id="ejs-wrap" style="display:none">${ejemplosHTML}</div>
-    <div style="display:flex;gap:8px;margin-top:4px">
-      <button class="btn-ghost" onclick="toggleEjs()">▼ Secuencias ejemplo</button>
-      <button class="btn-ghost-purple" onclick="ejecutarPenales()">🔁 Resimular</button>
-    </div>
-  </div>`;
-}
-
-function toggleEjs() {
-  const w = document.getElementById("ejs-wrap");
-  if(!w) return;
-  const btn = w.previousElementSibling.querySelector(".btn-ghost");
-  if(w.style.display==="none"){
-    w.style.display="block"; if(btn) btn.textContent="▲ Ocultar secuencias";
-  } else {
-    w.style.display="none"; if(btn) btn.textContent="▼ Secuencias ejemplo";
-  }
-}
-
-// ═══════════════════════════════════════════════════════════
-// RENDER LISTA DE PARTIDOS
-// ═══════════════════════════════════════════════════════════
-function renderPartidos() {
-  const today = new Date().toISOString().slice(0,10);
-  document.getElementById("lbl-partidos").textContent =
-    "PARTIDOS " + (partidos.length > 0 ? "("+partidos.length+")" : "");
-  if(partidos.length === 0) {
-    document.getElementById("lista-partidos").innerHTML =
-      '<div style="color:var(--muted);font-size:10px">No hay partidos disponibles</div>';
-    return;
-  }
-  document.getElementById("lista-partidos").innerHTML = partidos.map((p,i) => {
-    const activo = partidoActivo &&
-      partidoActivo.local===p.local && partidoActivo.visita===p.visita;
-    const esHoy = p.fecha === today;
-    return `<button class="match-btn${activo?" active":""}" onclick="selPartido(${i})">
-      <div class="row">
-        <span style="font-weight:700">
-          ${p.local} <span style="opacity:.5">vs</span> ${p.visita}
-        </span>
-        ${esHoy?`<span class="hoy-badge">HOY</span>`:""}
-      </div>
-      <div class="sub">${p.grupo}${p.hora?" · "+p.hora:""}</div>
-    </button>`;
-  }).join("");
-}
-
-// ═══════════════════════════════════════════════════════════
-// RENDER TABLA EQUIPOS
-// ═══════════════════════════════════════════════════════════
-function renderTabla() {
-  const rows = Object.entries(modelo)
-    .sort((a,b)=>b[1].atk-a[1].atk)
-    .map(([tla,e]) => {
-      const ps = getPen(tla);
-      const dif = e.gf-e.gc;
-      const dc = dif>=0?"var(--green)":"var(--red)";
-      return `<tr>
-        <td style="color:var(--muted);text-align:center">${tla}</td>
-        <td>${e.nom}</td>
-        <td style="text-align:center">${e.pj}</td>
-        <td style="text-align:center;color:var(--green)">${e.gf}</td>
-        <td style="text-align:center;color:var(--red)">${e.gc}</td>
-        <td style="text-align:center;color:${dc}">${dif>0?"+":""}${dif}</td>
-        <td style="text-align:center;color:var(--green);font-weight:700">${e.atk.toFixed(3)}</td>
-        <td style="text-align:center;color:var(--red);font-weight:700">${e.def.toFixed(3)}</td>
-        <td style="text-align:center;color:var(--amber)">${(ps.k*100).toFixed(0)}%</td>
-        <td style="text-align:center;color:var(--blue)">${(ps.s*100).toFixed(0)}%</td>
-      </tr>`;
-    }).join("");
-  document.getElementById("tabla-body").innerHTML = rows;
-}
-
-// ═══════════════════════════════════════════════════════════
-// ACCIONES
-// ═══════════════════════════════════════════════════════════
-async function actualizar() {
-  const btn = document.getElementById("btn-actualizar");
-  btn.disabled = true; btn.textContent = "⏳ DESCARGANDO...";
-  clearLog();
-  log("[◉] Conectando a football-data.org...", "info");
-
-  try {
-    log("[→] GET /v4/competitions/WC/matches ...", "info");
-    const resp = await fetch(BASE_URL+"/matches", {
-      headers: { "X-Auth-Token": API_KEY }
-    });
-    if(!resp.ok) {
-      const err = await resp.json().catch(()=>({}));
-      throw new Error("HTTP "+resp.status+": "+(err.message||resp.statusText));
-    }
-    const data = await resp.json();
-    const matches = data.matches || [];
-    log("[✓] "+matches.length+" partidos descargados", "ok");
-
-    const { totalGoles, totalPartidos } = parsearMatches(matches);
-    if(Object.keys(modelo).length < 4) throw new Error("Datos insuficientes");
-
-    const today = new Date().toISOString().slice(0,10);
-    const hoy = partidos.filter(p=>p.fecha===today);
-    const fechaStr = new Date().toLocaleString("es-MX",{timeZone:"America/Mexico_City"});
-
-    log("[✓] "+Object.keys(modelo).length+" equipos · λ="+lambda.toFixed(3)+" goles/partido", "ok");
-    log("[✓] "+partidos.length+" partidos"+(hoy.length>0?" · "+hoy.length+" HOY":" (próximos)"), "ok");
-    log("──────────────────────────────────────", "muted");
-    log("▶ Selecciona un partido para simular", "normal");
-
-    // Actualizar UI
-    document.getElementById("badge-real").style.display="inline-block";
-    document.getElementById("badge-lambda").style.display="inline-block";
-    document.getElementById("badge-lambda").textContent="λ="+lambda.toFixed(3);
-    document.getElementById("meta-txt").style.display="inline";
-    document.getElementById("meta-txt").textContent=
-      totalPartidos+" partidos · "+totalGoles+" goles · "+fechaStr;
-    document.getElementById("btn-tabla").style.display="inline-block";
-
-    partidoActivo = null; resActivo = null; resPenActivo = null;
-    renderPartidos();
-    renderTabla();
-    document.getElementById("panel-resultado").innerHTML =
-      `<div class="placeholder"><div class="icon">⚽</div>
-       <div>Selecciona un partido para simular</div></div>`;
-
-  } catch(err) {
-    log("[✗] "+err.message, "warn");
-    if(err.message.includes("Failed to fetch"))
-      log("[!] Sin conexión o CORS bloqueado — abre desde Chrome/Firefox", "warn");
-    else if(err.message.includes("403"))
-      log("[!] API key inválida o sin permisos para el Mundial", "warn");
-    else
-      log("[!] Revisa tu conexión a internet", "warn");
-  }
-
-  btn.disabled = false; btn.textContent = "🔄 ACTUALIZAR DATOS";
-}
-
-function selPartido(i) {
-  if(!partidos[i]) return;
-  partidoActivo = partidos[i];
-  resPenActivo = null;
-  const p = partidoActivo;
-  if(!modelo[p.local]||!modelo[p.visita]) return;
-  log("\n[⚡] "+modelo[p.local].nom+" vs "+modelo[p.visita].nom, "ok");
-  resActivo = simular(p.local, p.visita);
-  log("[✓] Marcador más probable: "+resActivo.top5[0].m+
-    " ("+resActivo.top5[0].p.toFixed(1)+"%)", "ok");
-  renderPartidos();
-  renderResultado();
-}
-
-function ejecutarPenales() {
-  if(!partidoActivo) return;
-  log("[⚽] Simulando tanda de penales (n=50,000)...", "info");
-  resPenActivo = simularPenales(partidoActivo.local, partidoActivo.visita);
-  const nomL = modelo[partidoActivo.local].nom.split(" ")[0];
-  log("[✓] "+nomL+" avanza: "+resPenActivo.pL.toFixed(1)+"%", "ok");
-  renderResultado();
-}
-
-function toggleCond(k) {
-  cond[k] = !cond[k];
-  const box = document.getElementById("chk-"+k);
-  box.classList.toggle("on", cond[k]);
-  resActivo = null; resPenActivo = null;
-  if(partidoActivo && modelo[partidoActivo.local]) {
-    resActivo = simular(partidoActivo.local, partidoActivo.visita);
-    renderResultado();
-  }
-}
-
-function toggleEliminatoria() {
-  eliminatoria = !eliminatoria;
-  document.getElementById("chk-elim").classList.toggle("on-purple", eliminatoria);
-  resPenActivo = null;
-  if(resActivo) renderResultado();
-}
-
-function toggleTabla() {
-  tablaVisible = !tablaVisible;
-  document.getElementById("tabla-wrap").style.display = tablaVisible?"block":"none";
-  document.getElementById("btn-tabla").textContent =
-    tablaVisible ? "▲ Ocultar equipos" : "▼ Ver equipos";
-}
-</script>
-</body>
-</html>
+            <sp
