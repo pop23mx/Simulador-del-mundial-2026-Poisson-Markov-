@@ -350,7 +350,6 @@ function cambiarFecha() {
     custom.classList.add("hidden");
   }
   fechaActual = select.value;
-  // Si ya hay datos cargados, actualizar
   if (Object.keys(modelo).length > 0) {
     actualizar();
   }
@@ -387,17 +386,20 @@ function clearLog() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// PARSEAR RESPUESTA
+// PARSEAR RESPUESTA - CORREGIDO
 // ═══════════════════════════════════════════════════════════
-function parsearMatches(matches) {
+function parsearMatches(todosLosMatches, fechaConsulta) {
   const stats = {};
   let totalGoles = 0, totalPartidos = 0;
-  for (const m of matches) {
+
+  // 1. Calcular estadísticas con TODOS los partidos FINALIZADOS
+  //    (sin importar la fecha, para tener el mejor modelo posible)
+  for (const m of todosLosMatches) {
     if (m.status !== "FINISHED") continue;
     const s = m.score && m.score.fullTime;
     if (!s || s.home == null) continue;
-    const tlaH = m.homeTeam && m.homeTeam.tla;
-    const tlaA = m.awayTeam && m.awayTeam.tla;
+    const tlaH = m.homeTeam?.tla;
+    const tlaA = m.awayTeam?.tla;
     if (!tlaH || !tlaA) continue;
     const gh = s.home, ga = s.away;
     totalGoles += gh + ga; totalPartidos++;
@@ -406,22 +408,53 @@ function parsearMatches(matches) {
       stats[tla].gf += gf; stats[tla].gc += gc; stats[tla].pj++;
     });
   }
-  lambda = totalPartidos > 0 ? totalGoles / totalPartidos : 2.95;
-  modelo = {};
-  for (const [tla, s] of Object.entries(stats)) {
-    const pj = Math.max(1, s.pj);
-    modelo[tla] = { nom:getNom(tla), gf:s.gf, gc:s.gc, pj,
-      atk:(s.gf/pj)/lambda, def:(s.gc/pj)/lambda };
+
+  // 2. Construir modelo con estadísticas reales (si hay datos)
+  if (totalPartidos > 0) {
+    lambda = totalGoles / totalPartidos;
+    modelo = {};
+    for (const [tla, s] of Object.entries(stats)) {
+      const pj = Math.max(1, s.pj);
+      modelo[tla] = {
+        nom: getNom(tla),
+        gf: s.gf,
+        gc: s.gc,
+        pj,
+        atk: (s.gf / pj) / lambda,
+        def: (s.gc / pj) / lambda,
+      };
+    }
+    log(`[📊] ${Object.keys(modelo).length} equipos con estadísticas reales (${totalPartidos} partidos)`, "ok");
+  } else {
+    // 3. Si NO hay partidos finalizados, usar estadísticas por defecto
+    //    para los equipos que aparecen en los partidos programados
+    const equiposEnPartidos = new Set();
+    for (const m of todosLosMatches) {
+      if (m.homeTeam?.tla) equiposEnPartidos.add(m.homeTeam.tla);
+      if (m.awayTeam?.tla) equiposEnPartidos.add(m.awayTeam.tla);
+    }
+    lambda = 2.95;
+    modelo = {};
+    for (const tla of equiposEnPartidos) {
+      modelo[tla] = {
+        nom: getNom(tla),
+        gf: 0,
+        gc: 0,
+        pj: 0,
+        atk: 1.0,
+        def: 1.0,
+      };
+    }
+    log(`[ℹ️] Sin partidos finalizados. Usando estadísticas base para ${Object.keys(modelo).length} equipos.`, "info");
   }
 
-  // Filtrar partidos por fecha
-  const fechaStr = obtenerFechaDesdeSelector();
-  let partidosFiltrados = matches
+  // 4. Filtrar partidos para la fecha consultada
+  let partidosFiltrados = todosLosMatches
     .filter(m => ["SCHEDULED","TIMED","IN_PLAY","PAUSED","FINISHED"].includes(m.status)
-      && modelo[m.homeTeam&&m.homeTeam.tla] && modelo[m.awayTeam&&m.awayTeam.tla])
-    .filter(m => m.utcDate.slice(0,10) === fechaStr);
+      && modelo[m.homeTeam?.tla] && modelo[m.awayTeam?.tla])
+    .filter(m => m.utcDate.slice(0,10) === fechaConsulta);
 
-  // Aplicar filtro de fase si está seleccionado
+  // 5. Aplicar filtro de fase si está seleccionado
   if (faseActual) {
     partidosFiltrados = partidosFiltrados.filter(m => m.stage === faseActual);
   }
@@ -687,6 +720,13 @@ function renderPartidos() {
 // RENDER TABLA
 // ═══════════════════════════════════════════════════════════
 function renderTabla() {
+  if (Object.keys(modelo).length === 0) {
+    document.getElementById("tabla-body").innerHTML =
+      `<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:20px;">
+        No hay estadísticas disponibles
+      </td></tr>`;
+    return;
+  }
   const rows = Object.entries(modelo)
     .sort((a,b)=>b[1].atk-a[1].atk)
     .map(([tla,e]) => {
@@ -734,7 +774,7 @@ function mostrarMensaje(mensaje, tipo = "info", detalle = "", solucion = "") {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ACTUALIZAR DATOS
+// ACTUALIZAR DATOS - CORREGIDO
 // ═══════════════════════════════════════════════════════════
 async function actualizar() {
   const btn = document.getElementById("btn-actualizar");
@@ -745,7 +785,7 @@ async function actualizar() {
   const faseStr = faseActual ? `&stage=${faseActual}` : "";
 
   log("[◉] Conectando a football-data.org...", "info");
-  log(`[→] Fecha: ${fechaStr}${faseActual ? " · Fase: "+faseActual : ""}`, "info");
+  log(`[→] Consultando partidos para: ${fechaStr}${faseActual ? " · Fase: "+faseActual : ""}`, "info");
 
   // Limpiar datos previos
   modelo = {};
@@ -759,25 +799,53 @@ async function actualizar() {
   document.getElementById("meta-txt").style.display = "none";
 
   try {
-    const url = PROXY + encodeURIComponent(
-      `${BASE_URL}/matches?dateFrom=${fechaStr}&dateTo=${fechaStr}${faseStr}`
+    // 1. Obtener TODOS los partidos de la competición (para estadísticas)
+    //    Usamos un rango amplio para capturar todos los partidos jugados
+    const fechaInicio = "2026-06-01"; // Inicio del Mundial
+    const fechaFin = new Date().toISOString().slice(0,10); // Hasta hoy
+    const urlStats = PROXY + encodeURIComponent(
+      `${BASE_URL}/matches?dateFrom=${fechaInicio}&dateTo=${fechaFin}`
     );
-    log(`[→] GET ${url}`, "muted");
-
-    const resp = await fetch(url, { headers: { "X-Auth-Token": API_KEY } });
-
-    if (!resp.ok) {
+    log(`[→] Obteniendo estadísticas desde ${fechaInicio} hasta ${fechaFin}`, "info");
+    const respStats = await fetch(urlStats, { headers: { "X-Auth-Token": API_KEY } });
+    if (!respStats.ok) {
       let errMsg = "";
-      try { const err = await resp.json(); errMsg = err.message || err.error || ""; } catch(e) {}
-      throw new Error(`HTTP ${resp.status}${errMsg ? ": "+errMsg : ""}`);
+      try { const err = await respStats.json(); errMsg = err.message || err.error || ""; } catch(e) {}
+      throw new Error(`HTTP ${respStats.status}${errMsg ? ": "+errMsg : ""}`);
+    }
+    const dataStats = await respStats.json();
+    const todosLosMatches = dataStats.matches || [];
+    log(`[✓] ${todosLosMatches.length} partidos totales descargados`, "ok");
+
+    // 2. Procesar estadísticas con TODOS los partidos
+    const fechaConsulta = fechaStr;
+    const { totalGoles, totalPartidos } = parsearMatches(todosLosMatches, fechaConsulta);
+
+    // 3. Verificar si hay modelo
+    if (Object.keys(modelo).length === 0) {
+      // Si no hay modelo, usar estadísticas por defecto para los equipos
+      const equiposEnPartidos = new Set();
+      for (const m of todosLosMatches) {
+        if (m.homeTeam?.tla) equiposEnPartidos.add(m.homeTeam.tla);
+        if (m.awayTeam?.tla) equiposEnPartidos.add(m.awayTeam.tla);
+      }
+      lambda = 2.95;
+      modelo = {};
+      for (const tla of equiposEnPartidos) {
+        modelo[tla] = {
+          nom: getNom(tla),
+          gf: 0,
+          gc: 0,
+          pj: 0,
+          atk: 1.0,
+          def: 1.0,
+        };
+      }
+      log(`[ℹ️] Usando estadísticas base para ${Object.keys(modelo).length} equipos`, "info");
     }
 
-    const data = await resp.json();
-    const matches = data.matches || [];
-    log(`[✓] ${matches.length} partidos descargados`, "ok");
-
-    // Si no hay partidos, mostrar mensaje informativo
-    if (matches.length === 0) {
+    // 4. Verificar partidos para la fecha consultada
+    if (partidos.length === 0) {
       const fechaDisplay = new Date(fechaStr).toLocaleDateString("es-MX", {
         timeZone: "America/Mexico_City"
       });
@@ -792,100 +860,23 @@ async function actualizar() {
         "Prueba con otra fecha o fase."
       );
       renderPartidos();
+      renderTabla();
       btn.disabled = false;
       btn.textContent = "🔄 ACTUALIZAR DATOS";
       return;
     }
 
-    const { totalGoles, totalPartidos } = parsearMatches(matches);
-
-    // Si no se pudieron procesar los datos (0 equipos)
-    if (Object.keys(modelo).length < 4) {
-      log(`[⚠️] Datos insuficientes: ${Object.keys(modelo).length} equipos procesados`, "warn");
-      mostrarMensaje(
-        "📊 Datos insuficientes",
-        "info",
-        "El Mundial 2026 aún no ha comenzado o no hay partidos finalizados para calcular estadísticas.",
-        "Los partidos programados se mostrarán, pero las simulaciones usarán estadísticas por defecto."
-      );
-      // Intentar usar estadísticas por defecto para los equipos
-      const equiposEnPartidos = new Set();
-      for (const m of matches) {
-        const tlaH = m.homeTeam?.tla;
-        const tlaA = m.awayTeam?.tla;
-        if (tlaH) equiposEnPartidos.add(tlaH);
-        if (tlaA) equiposEnPartidos.add(tlaA);
-      }
-      // Crear modelo básico para los equipos
-      for (const tla of equiposEnPartidos) {
-        if (!modelo[tla]) {
-          modelo[tla] = { nom: getNom(tla), gf: 0, gc: 0, pj: 0, atk: 1.0, def: 1.0 };
-        }
-      }
-      lambda = 2.95;
-      
-      // Procesar partidos programados
-      const fechaStrLocal = obtenerFechaDesdeSelector();
-      let partidosFiltrados = matches
-        .filter(m => ["SCHEDULED","TIMED","IN_PLAY","PAUSED","FINISHED"].includes(m.status)
-          && modelo[m.homeTeam?.tla] && modelo[m.awayTeam?.tla])
-        .filter(m => m.utcDate.slice(0,10) === fechaStrLocal);
-
-      if (faseActual) {
-        partidosFiltrados = partidosFiltrados.filter(m => m.stage === faseActual);
-      }
-
-      partidosFiltrados.sort((a,b) => new Date(a.utcDate) - new Date(b.utcDate));
-
-      partidos = partidosFiltrados.map(m => {
-        const utc = new Date(m.utcDate);
-        let hora = "";
-        try { hora = utc.toLocaleTimeString("es-MX",
-          {hour:"2-digit",minute:"2-digit",timeZone:"America/Mexico_City"}); }
-        catch(e) { hora = utc.toUTCString().slice(17,22)+" UTC"; }
-        return { local:m.homeTeam.tla, visita:m.awayTeam.tla,
-          grupo:m.group||m.stage||"", fecha:m.utcDate.slice(0,10), hora,
-          estado:m.status };
-      });
-
-      const fechaStrDisplay = new Date(fechaStr).toLocaleDateString("es-MX", {
-        timeZone: "America/Mexico_City"
-      });
-
-      log(`[✓] ${partidos.length} partidos programados para ${fechaStrDisplay}`, "ok");
-      log(`[ℹ️] ${Object.keys(modelo).length} equipos (sin estadísticas completas)`, "info");
-      log("──────────────────────────────────────", "muted");
-      log("▶ Selecciona un partido para simular (estadísticas base)", "normal");
-
-      document.getElementById("badge-lambda").style.display = "inline-block";
-      document.getElementById("badge-lambda").textContent = "λ=2.95 (estimado)";
-      document.getElementById("btn-tabla").style.display = "inline-block";
-
-      renderPartidos();
-      // No renderizar tabla (no hay datos)
-      document.getElementById("tabla-body").innerHTML = 
-        `<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:20px;">
-          No hay estadísticas disponibles aún
-        </td></tr>`;
-      document.getElementById("panel-resultado").innerHTML =
-        `<div class="placeholder"><div class="icon">⚽</div>
-         <div>Selecciona un partido para simular</div>
-         <div style="font-size:8px;color:var(--muted);margin-top:4px;">
-           Usando estadísticas base (sin datos históricos)
-         </div></div>`;
-      
-      btn.disabled = false;
-      btn.textContent = "🔄 ACTUALIZAR DATOS";
-      return;
-    }
-
-    // Datos completos - procesamiento normal
-    const hoy = partidos.filter(p => p.fecha === new Date().toISOString().slice(0,10));
+    // 5. Mostrar resultados
     const fechaStrDisplay = new Date(fechaStr).toLocaleDateString("es-MX", {
       timeZone: "America/Mexico_City"
     });
 
-    log(`[✓] ${Object.keys(modelo).length} equipos · λ=${lambda.toFixed(3)} goles/partido`, "ok");
+    if (totalPartidos > 0) {
+      log(`[✓] ${Object.keys(modelo).length} equipos · λ=${lambda.toFixed(3)} goles/partido (${totalPartidos} partidos)`, "ok");
+      document.getElementById("badge-real").style.display = "inline-block";
+    } else {
+      log(`[✓] ${Object.keys(modelo).length} equipos · λ=${lambda.toFixed(3)} (estimado)`, "ok");
+    }
     log(`[✓] ${partidos.length} partidos · ${fechaStrDisplay}`, "ok");
     if (partidos.length > 0) {
       const estados = partidos.filter(p => p.estado === "IN_PLAY").length;
@@ -894,19 +885,21 @@ async function actualizar() {
     log("──────────────────────────────────────", "muted");
     log("▶ Selecciona un partido para simular", "normal");
 
-    document.getElementById("badge-real").style.display = "inline-block";
     document.getElementById("badge-lambda").style.display = "inline-block";
     document.getElementById("badge-lambda").textContent = "λ=" + lambda.toFixed(3);
     document.getElementById("meta-txt").style.display = "inline";
     document.getElementById("meta-txt").textContent =
-      totalPartidos + " partidos históricos · " + totalGoles + " goles · " + fechaStrDisplay;
+      (totalPartidos > 0 ? totalPartidos + " partidos históricos · " + totalGoles + " goles · " : "") + fechaStrDisplay;
     document.getElementById("btn-tabla").style.display = "inline-block";
 
     renderPartidos();
     renderTabla();
     document.getElementById("panel-resultado").innerHTML =
       `<div class="placeholder"><div class="icon">⚽</div>
-       <div>Selecciona un partido para simular</div>`;
+       <div>Selecciona un partido para simular</div>
+       ${totalPartidos === 0 ? `<div style="font-size:8px;color:var(--muted);margin-top:4px;">
+         Usando estadísticas base (sin datos históricos)
+       </div>` : ""}</div>`;
 
   } catch (err) {
     log(`[✗] ERROR: ${err.message}`, "error");
@@ -1001,16 +994,15 @@ function toggleTabla() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// INICIO - LOS FILTROS YA SON VISIBLES DESDE EL PRINCIPIO
+// INICIO
 // ═══════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', function() {
-  // Configurar fecha por defecto
   const custom = document.getElementById("fecha-custom");
   custom.value = new Date().toISOString().slice(0,10);
   custom.classList.add("hidden");
 
-  // Los filtros ya son visibles desde el HTML
   log("▶ Los filtros están disponibles para seleccionar fecha y fase", "normal");
+  log("▶ Las estadísticas se calculan con TODOS los partidos jugados hasta hoy", "muted");
   log("▶ Presiona 'ACTUALIZAR DATOS' para cargar los partidos", "muted");
 });
 </script>
