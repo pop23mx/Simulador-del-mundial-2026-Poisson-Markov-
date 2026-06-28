@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>⚽ Simulador Mundial 2026</title>
 <style>
-  /* ... (mismo CSS que antes, sin cambios) ... */
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --bg:#0a0e1a; --card:#1a2235; --border:#1e2d45;
@@ -20,12 +19,12 @@
   .header p  { font-size:10px; color:var(--muted); margin-top:3px; }
   .wrap { max-width:860px; margin:0 auto; padding:16px 20px; }
 
-  .btn { border:none; border-radius:6px; padding:10px 16px; font-family:inherit;
-    font-weight:700; font-size:12px; cursor:pointer; transition:opacity .15s; }
+  .btn { border:none; border-radius:6px; padding:8px 14px; font-family:inherit;
+    font-weight:700; font-size:11px; cursor:pointer; transition:opacity .15s; }
   .btn:disabled { opacity:.5; cursor:not-allowed; }
   .btn-green  { background:var(--green); color:#000; }
   .btn-dark   { background:var(--card); color:var(--text);
-    border:1px solid var(--border); font-size:11px; }
+    border:1px solid var(--border); font-size:10px; }
   .btn-purple { background:var(--purple); color:#000; width:100%;
     padding:10px; font-size:12px; font-weight:700; border:none;
     border-radius:6px; cursor:pointer; margin-top:10px; }
@@ -37,85 +36,94 @@
     font-family:inherit; font-size:9px; cursor:pointer; }
 
   .card { background:var(--card); border:1px solid var(--border);
-    border-radius:8px; padding:14px 16px; margin-bottom:10px; }
+    border-radius:8px; padding:12px 14px; margin-bottom:10px; }
   .card-dark { background:#050a10; border:1px solid var(--border);
-    border-radius:6px; padding:10px 12px; }
+    border-radius:6px; padding:8px 10px; }
   .label { font-size:9px; color:var(--muted); letter-spacing:1px;
-    text-transform:uppercase; margin-bottom:8px; }
+    text-transform:uppercase; margin-bottom:6px; }
 
   .badge { display:inline-block; font-size:9px; font-weight:700;
     padding:2px 8px; border-radius:3px; letter-spacing:1px; }
 
-  .top-bar { display:flex; gap:10px; align-items:center;
-    margin-bottom:14px; flex-wrap:wrap; }
+  .top-bar { display:flex; gap:8px; align-items:center;
+    margin-bottom:12px; flex-wrap:wrap; }
 
-  .grid { display:grid; grid-template-columns:250px 1fr; gap:12px; }
-  @media(max-width:600px){
+  .grid { display:grid; grid-template-columns:280px 1fr; gap:12px; }
+  @media(max-width:650px){
     .grid { grid-template-columns:1fr; }
     .header h1 { font-size:13px; }
   }
 
-  .check-row { display:flex; align-items:center; gap:8px; cursor:pointer;
-    font-size:10px; padding:5px 0; user-select:none; }
+  .check-row { display:flex; align-items:center; gap:6px; cursor:pointer;
+    font-size:9px; padding:3px 0; user-select:none; }
   .check-box { width:14px; height:14px; border-radius:3px; flex-shrink:0;
     border:2px solid var(--border); background:transparent; }
   .check-box.on { background:var(--green); border-color:var(--green); }
   .check-box.on-purple { background:var(--purple); border-color:var(--purple); }
 
   .match-btn { background:var(--bg); color:var(--text);
-    border:1px solid var(--border); border-radius:5px; padding:9px 10px;
-    font-family:inherit; font-size:10px; cursor:pointer; width:100%;
-    text-align:left; margin-bottom:5px; transition:all .15s; }
+    border:1px solid var(--border); border-radius:5px; padding:7px 10px;
+    font-family:inherit; font-size:9px; cursor:pointer; width:100%;
+    text-align:left; margin-bottom:4px; transition:all .15s; }
   .match-btn.active { background:var(--green); color:#000;
     border-color:var(--green); font-weight:700; }
   .match-btn .sub { font-size:8px; margin-top:2px; opacity:.6; }
   .match-btn .row { display:flex; justify-content:space-between; align-items:center; }
-  .hoy-badge { font-size:8px; font-weight:700; padding:1px 5px;
+  .hoy-badge { font-size:7px; font-weight:700; padding:1px 5px;
     border-radius:2px; background:rgba(0,230,118,.15); color:var(--green); }
   .match-btn.active .hoy-badge { background:rgba(0,0,0,.2); color:#000; }
 
-  .bar-wrap { margin-bottom:9px; }
+  .bar-wrap { margin-bottom:7px; }
   .bar-label { display:flex; justify-content:space-between;
-    font-size:11px; margin-bottom:3px; }
-  .bar-track { background:var(--border); border-radius:4px; height:7px; overflow:hidden; }
+    font-size:10px; margin-bottom:2px; }
+  .bar-track { background:var(--border); border-radius:4px; height:6px; overflow:hidden; }
   .bar-fill  { height:100%; border-radius:4px; transition:width .5s ease; }
 
-  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
 
   .marcador-chip { border:1px solid var(--border); border-radius:4px;
-    padding:3px 10px; text-align:center; display:inline-block; }
+    padding:2px 8px; text-align:center; display:inline-block; }
   .marcador-chip.top { border-color:var(--green); background:rgba(0,230,118,.1); }
-  .marcador-chips { display:flex; gap:5px; flex-wrap:wrap; margin-top:4px; }
+  .marcador-chips { display:flex; gap:4px; flex-wrap:wrap; margin-top:3px; }
 
-  .console { background:#050a10; border-radius:6px; padding:10px 12px;
-    max-height:150px; overflow-y:auto; font-size:11px; line-height:1.8; }
+  .console { background:#050a10; border-radius:6px; padding:8px 10px;
+    max-height:120px; overflow-y:auto; font-size:10px; line-height:1.7; }
 
   .tabla-wrap { overflow-x:auto; }
-  table { width:100%; border-collapse:collapse; font-size:10px; }
-  th { padding:3px 8px; font-size:9px; font-weight:600; color:var(--muted);
+  table { width:100%; border-collapse:collapse; font-size:9px; }
+  th { padding:2px 6px; font-size:8px; font-weight:600; color:var(--muted);
     border-bottom:1px solid var(--border); }
-  td { padding:4px 8px; border-bottom:1px solid rgba(30,45,69,.4); }
+  td { padding:3px 6px; border-bottom:1px solid rgba(30,45,69,.4); }
 
   .pen-seq { background:#050a10; border:1px solid var(--border);
-    border-radius:5px; padding:8px 10px; margin-top:6px; font-size:11px; }
-  .pen-row { display:flex; gap:5px; margin-bottom:3px; align-items:center; }
-  .pen-lbl { font-size:9px; color:var(--muted); width:28px; flex-shrink:0; }
+    border-radius:5px; padding:6px 8px; margin-top:5px; font-size:10px; }
+  .pen-row { display:flex; gap:4px; margin-bottom:2px; align-items:center; }
+  .pen-lbl { font-size:8px; color:var(--muted); width:24px; flex-shrink:0; }
   .pen-ok  { color:var(--green); font-weight:700; }
   .pen-no  { color:var(--red);   font-weight:700; }
 
   .legend { background:var(--card); border:1px solid var(--border);
-    border-radius:8px; padding:10px 14px; margin-top:10px;
-    font-size:9px; color:var(--muted); line-height:2; }
-  .leg-badge { background:var(--border); font-size:8px; font-weight:700;
-    padding:1px 6px; border-radius:2px; margin-right:6px; }
+    border-radius:8px; padding:8px 12px; margin-top:8px;
+    font-size:8px; color:var(--muted); line-height:1.8; }
+  .leg-badge { background:var(--border); font-size:7px; font-weight:700;
+    padding:1px 5px; border-radius:2px; margin-right:4px; }
 
   .placeholder { background:var(--card); border:1px solid var(--border);
-    border-radius:8px; padding:40px 20px; text-align:center;
-    color:var(--muted); font-size:11px; }
-  .placeholder .icon { font-size:28px; margin-bottom:8px; }
-  .placeholder .error-icon { font-size:36px; margin-bottom:8px; }
-  .error-msg { color:var(--red); font-weight:700; margin:10px 0; }
-  .error-hint { color:var(--muted); font-size:10px; margin-top:6px; }
+    border-radius:8px; padding:30px 15px; text-align:center;
+    color:var(--muted); font-size:10px; }
+  .placeholder .icon { font-size:24px; margin-bottom:6px; }
+  .placeholder .error-icon { font-size:30px; margin-bottom:6px; }
+  .error-msg { color:var(--red); font-weight:700; margin:8px 0; }
+  .error-hint { color:var(--muted); font-size:9px; margin-top:4px; }
+
+  .filtros { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:6px; }
+  .filtros select, .filtros input { background:var(--bg); color:var(--text);
+    border:1px solid var(--border); border-radius:4px; padding:4px 8px;
+    font-family:inherit; font-size:9px; }
+  .filtros select { cursor:pointer; }
+  .filtros label { font-size:9px; color:var(--muted); }
+
+  .hidden { display:none !important; }
 
   #hidden-table { display:none; }
 </style>
@@ -147,11 +155,36 @@
     <span class="badge" id="badge-lambda"
       style="background:var(--card);color:var(--muted);
         border:1px solid var(--border);display:none">λ=—</span>
-    <span id="meta-txt" style="color:var(--muted);font-size:9px;display:none"></span>
+    <span id="meta-txt" style="color:var(--muted);font-size:8px;display:none"></span>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="card" id="filtros-card">
+    <div class="label">FILTROS DE PARTIDOS</div>
+    <div class="filtros">
+      <label>📅 Fecha:</label>
+      <select id="fecha-select" onchange="cambiarFecha()">
+        <option value="today">Hoy</option>
+        <option value="tomorrow">Mañana</option>
+        <option value="custom">Personalizada</option>
+      </select>
+      <input type="date" id="fecha-custom" class="hidden" onchange="cambiarFechaCustom()">
+      <label>🏆 Fase:</label>
+      <select id="fase-select" onchange="cambiarFase()">
+        <option value="">Todas</option>
+        <option value="GROUP_STAGE">Fase de grupos</option>
+        <option value="ROUND_OF_32">Dieciseisavos de final</option>
+        <option value="ROUND_OF_16">Octavos de final</option>
+        <option value="QUARTER_FINALS">Cuartos de final</option>
+        <option value="SEMI_FINALS">Semifinales</option>
+        <option value="FINAL">Final</option>
+        <option value="THIRD_PLACE">Tercer lugar</option>
+      </select>
+    </div>
   </div>
 
   <!-- TABLA EQUIPOS (oculta por defecto) -->
-  <div id="tabla-wrap" style="display:none" class="card" style="margin-bottom:14px">
+  <div id="tabla-wrap" style="display:none" class="card" style="margin-bottom:10px">
     <div class="label">ESTADÍSTICAS REALES · ATK=(GF/PJ)÷λ · DEF=(GC/PJ)÷λ</div>
     <div class="tabla-wrap">
       <table id="tabla-equipos">
@@ -192,8 +225,8 @@
       <!-- Partidos -->
       <div class="card">
         <div class="label" id="lbl-partidos">PARTIDOS</div>
-        <div id="lista-partidos">
-          <div style="color:var(--muted);font-size:10px">Carga los datos primero →</div>
+        <div id="lista-partidos" style="max-height:400px;overflow-y:auto;">
+          <div style="color:var(--muted);font-size:9px">Carga los datos primero →</div>
         </div>
       </div>
     </div>
@@ -209,7 +242,7 @@
       </div>
 
       <!-- Consola -->
-      <div class="card" style="margin-top:10px">
+      <div class="card" style="margin-top:8px">
         <div class="label">CONSOLA</div>
         <div class="console" id="consola">
           <span style="color:var(--green)">▶ Presiona ACTUALIZAR para descargar datos en tiempo real</span>
@@ -236,17 +269,22 @@
 const API_KEY  = "c26247054a384dab8d890badd4a6e6e2";
 const BASE_URL = "https://api.football-data.org/v4/competitions/WC";
 
-// 🔧 LISTA DE PROXIES CORS PARA PROBAR AUTOMÁTICAMENTE
-const PROXIES = [
-  { name: "api.allorigins.win", url: "https://api.allorigins.win/raw?url=" },
-  { name: "thingproxy", url: "https://thingproxy.freeboard.io/fetch/" },
-  { name: "corsproxy.io", url: "https://corsproxy.io/?" },
-  { name: "cors-anywhere", url: "https://cors-anywhere.herokuapp.com/" },
-  { name: "proxy.cors.sh", url: "https://proxy.cors.sh/" }
-];
+// Proxy CORS que funciona
+const PROXY = "https://corsproxy.io/?";
 
 // ═══════════════════════════════════════════════════════════
-// DATOS
+// ESTADO
+// ═══════════════════════════════════════════════════════════
+let modelo = {}, lambda = 2.95, partidos = [];
+let partidoActivo = null, resActivo = null, resPenActivo = null;
+let cond = { clima:false, bajaLocal:false, bajaVisita:false };
+let eliminatoria = true;
+let tablaVisible = false;
+let fechaActual = "today";
+let faseActual = "";
+
+// ═══════════════════════════════════════════════════════════
+// DATOS DE EQUIPOS
 // ═══════════════════════════════════════════════════════════
 const NOMBRES = {
   MEX:"México 🇲🇽", SAF:"Sudáfrica 🇿🇦", SKO:"Corea del Sur 🇰🇷", CZE:"Rep. Checa 🇨🇿",
@@ -277,13 +315,51 @@ const PEN = {
 const getPen = tla => PEN[tla] || PEN.DEFAULT;
 
 // ═══════════════════════════════════════════════════════════
-// ESTADO GLOBAL
+// FUNCIONES DE FECHA
 // ═══════════════════════════════════════════════════════════
-let modelo = {}, lambda = 2.95, partidos = [];
-let partidoActivo = null, resActivo = null, resPenActivo = null;
-let cond = { clima:false, bajaLocal:false, bajaVisita:false };
-let eliminatoria = true;
-let tablaVisible = false;
+function obtenerFechaStr(fecha) {
+  const d = new Date(fecha);
+  return d.toISOString().slice(0,10);
+}
+
+function obtenerFechaDesdeSelector() {
+  const select = document.getElementById("fecha-select");
+  const custom = document.getElementById("fecha-custom");
+  if (select.value === "today") {
+    return obtenerFechaStr(new Date());
+  } else if (select.value === "tomorrow") {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return obtenerFechaStr(d);
+  } else if (select.value === "custom") {
+    return custom.value || obtenerFechaStr(new Date());
+  }
+  return obtenerFechaStr(new Date());
+}
+
+function cambiarFecha() {
+  const select = document.getElementById("fecha-select");
+  const custom = document.getElementById("fecha-custom");
+  if (select.value === "custom") {
+    custom.classList.remove("hidden");
+    if (!custom.value) {
+      custom.value = obtenerFechaStr(new Date());
+    }
+  } else {
+    custom.classList.add("hidden");
+  }
+  fechaActual = select.value;
+  actualizar();
+}
+
+function cambiarFechaCustom() {
+  actualizar();
+}
+
+function cambiarFase() {
+  faseActual = document.getElementById("fase-select").value;
+  actualizar();
+}
 
 // ═══════════════════════════════════════════════════════════
 // LOG
@@ -303,7 +379,7 @@ function clearLog() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// PARSEAR RESPUESTA football-data.org
+// PARSEAR RESPUESTA
 // ═══════════════════════════════════════════════════════════
 function parsearMatches(matches) {
   const stats = {};
@@ -329,22 +405,32 @@ function parsearMatches(matches) {
     modelo[tla] = { nom:getNom(tla), gf:s.gf, gc:s.gc, pj,
       atk:(s.gf/pj)/lambda, def:(s.gc/pj)/lambda };
   }
-  const today = new Date().toISOString().slice(0,10);
-  const pendientes = matches
-    .filter(m => ["SCHEDULED","TIMED","IN_PLAY","PAUSED"].includes(m.status)
+
+  // Filtrar partidos por fecha
+  const fechaStr = obtenerFechaDesdeSelector();
+  let partidosFiltrados = matches
+    .filter(m => ["SCHEDULED","TIMED","IN_PLAY","PAUSED","FINISHED"].includes(m.status)
       && modelo[m.homeTeam&&m.homeTeam.tla] && modelo[m.awayTeam&&m.awayTeam.tla])
-    .sort((a,b) => new Date(a.utcDate) - new Date(b.utcDate));
-  const deHoy = pendientes.filter(m => m.utcDate.slice(0,10) === today);
-  const fuente = deHoy.length > 0 ? deHoy : pendientes.slice(0,8);
-  partidos = fuente.map(m => {
+    .filter(m => m.utcDate.slice(0,10) === fechaStr);
+
+  // Aplicar filtro de fase si está seleccionado
+  if (faseActual) {
+    partidosFiltrados = partidosFiltrados.filter(m => m.stage === faseActual);
+  }
+
+  partidosFiltrados.sort((a,b) => new Date(a.utcDate) - new Date(b.utcDate));
+
+  partidos = partidosFiltrados.map(m => {
     const utc = new Date(m.utcDate);
     let hora = "";
     try { hora = utc.toLocaleTimeString("es-MX",
       {hour:"2-digit",minute:"2-digit",timeZone:"America/Mexico_City"}); }
     catch(e) { hora = utc.toUTCString().slice(17,22)+" UTC"; }
     return { local:m.homeTeam.tla, visita:m.awayTeam.tla,
-      grupo:m.group||m.stage||"", fecha:m.utcDate.slice(0,10), hora };
+      grupo:m.group||m.stage||"", fecha:m.utcDate.slice(0,10), hora,
+      estado:m.status };
   });
+
   return { totalGoles, totalPartidos };
 }
 
@@ -405,7 +491,7 @@ function simularPenales(tlaL, tlaV, n=50000) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// RENDER HELPERS
+// RENDER
 // ═══════════════════════════════════════════════════════════
 function barra(label, pct, color) {
   return `<div class="bar-wrap">
@@ -431,8 +517,8 @@ function renderResultado() {
 
   const chips = r.top5.map((t,i) =>
     `<div class="marcador-chip${i===0?" top":""}">
-      <div style="font-weight:700;font-size:12px;color:${i===0?"var(--green)":"var(--text)"}">${t.m}</div>
-      <div style="font-size:9px;color:var(--muted)">${t.p.toFixed(1)}%</div>
+      <div style="font-weight:700;font-size:11px;color:${i===0?"var(--green)":"var(--text)"}">${t.m}</div>
+      <div style="font-size:8px;color:var(--muted)">${t.p.toFixed(1)}%</div>
     </div>`).join("");
 
   const botonPenales = eliminatoria ? (resPenActivo
@@ -443,31 +529,34 @@ function renderResultado() {
 
   document.getElementById("panel-resultado").innerHTML = `
     <div class="card" style="border-color:rgba(0,230,118,.25)">
-      <div style="text-align:center;margin-bottom:12px">
+      <div style="text-align:center;margin-bottom:10px">
         <span class="badge" style="background:var(--green);color:#000">
           MONTE CARLO POISSON · n=20,000
         </span>
-        <div style="font-size:13px;font-weight:700;margin-top:8px">
+        <div style="font-size:12px;font-weight:700;margin-top:6px">
           ${nomL} <span style="color:var(--muted)">vs</span> ${nomV}
+        </div>
+        <div style="font-size:8px;color:var(--muted);margin-top:2px">
+          📅 ${partidoActivo.fecha} ${partidoActivo.hora}
         </div>
       </div>
       ${barra("Victoria "+nomL, r.pL, "var(--green)")}
       ${barra(labelEmpate, r.pX, "var(--amber)")}
       ${barra("Victoria "+nomV, r.pV, "var(--red)")}
-      <hr style="border:none;border-top:1px solid var(--border);margin:12px 0">
-      <div class="grid2" style="margin-bottom:10px">
+      <hr style="border:none;border-top:1px solid var(--border);margin:10px 0">
+      <div class="grid2" style="margin-bottom:8px">
         <div class="card-dark" style="text-align:center">
-          <div style="font-size:9px;color:var(--muted)">Over 2.5</div>
-          <div style="font-size:20px;font-weight:700;color:var(--green)">${r.over25.toFixed(1)}%</div>
+          <div style="font-size:8px;color:var(--muted)">Over 2.5</div>
+          <div style="font-size:18px;font-weight:700;color:var(--green)">${r.over25.toFixed(1)}%</div>
         </div>
         <div class="card-dark" style="text-align:center">
-          <div style="font-size:9px;color:var(--muted)">Under 2.5</div>
-          <div style="font-size:20px;font-weight:700;color:var(--blue)">${r.under25.toFixed(1)}%</div>
+          <div style="font-size:8px;color:var(--muted)">Under 2.5</div>
+          <div style="font-size:18px;font-weight:700;color:var(--blue)">${r.under25.toFixed(1)}%</div>
         </div>
       </div>
       <div class="card-dark">
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">⚙ PARÁMETROS</div>
-        <div style="display:flex;gap:20px;font-size:11px;margin-bottom:10px">
+        <div style="font-size:8px;color:var(--muted);margin-bottom:6px">⚙ PARÁMETROS</div>
+        <div style="display:flex;gap:15px;font-size:10px;margin-bottom:8px">
           <span><span style="color:var(--muted)">λL </span>
             <span style="color:var(--green);font-weight:700">${r.lambdaL.toFixed(3)}</span></span>
           <span><span style="color:var(--muted)">λV </span>
@@ -475,7 +564,7 @@ function renderResultado() {
           <span><span style="color:var(--muted)">E[G] </span>
             <span style="color:var(--amber);font-weight:700">${r.goles.toFixed(2)}</span></span>
         </div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:6px">TOP 5 MARCADORES</div>
+        <div style="font-size:8px;color:var(--muted);margin-bottom:4px">TOP 5 MARCADORES</div>
         <div class="marcador-chips">${chips}</div>
       </div>
       ${botonPenales}
@@ -497,45 +586,45 @@ function renderPenales() {
     const muerteSudita = e.sL.some(r=>r==="⊕"||r==="⊗");
     return `<div class="pen-seq">
       <div class="pen-row"><span class="pen-lbl">LOC</span>${seqL}
-        <span style="color:var(--muted);margin-left:4px;font-size:10px">${e.gL}</span></div>
+        <span style="color:var(--muted);margin-left:4px;font-size:9px">${e.gL}</span></div>
       <div class="pen-row"><span class="pen-lbl">VIS</span>${seqV}
-        <span style="color:var(--muted);margin-left:4px;font-size:10px">${e.gV}</span></div>
-      <div style="font-size:9px;color:var(--purple);margin-top:3px">
+        <span style="color:var(--muted);margin-left:4px;font-size:9px">${e.gV}</span></div>
+      <div style="font-size:8px;color:var(--purple);margin-top:2px">
         Avanza: ${e.ganL?nomLc:nomVc}${muerteSudita?" · Fue a muerte súbita":""}
       </div>
     </div>`;
   }).join("");
 
   return `<div style="background:var(--card);border:1px solid rgba(206,147,216,.35);
-      border-radius:8px;padding:14px 16px;margin-top:10px">
-    <div style="text-align:center;margin-bottom:10px">
+      border-radius:8px;padding:12px 14px;margin-top:8px">
+    <div style="text-align:center;margin-bottom:8px">
       <span class="badge" style="background:var(--purple);color:#000">
         TANDA DE PENALES · n=50,000
       </span>
-      <div style="font-size:12px;font-weight:700;margin-top:6px">
+      <div style="font-size:11px;font-weight:700;margin-top:4px">
         ${nomL} <span style="color:var(--muted)">vs</span> ${nomV}
       </div>
     </div>
     ${barra(""+nomLc+" avanza", rp.pL, "var(--green)")}
     ${barra(""+nomVc+" avanza", rp.pV, "var(--red)")}
-    <div class="grid2" style="margin-top:10px;margin-bottom:10px">
+    <div class="grid2" style="margin-top:8px;margin-bottom:8px">
       <div class="card-dark">
-        <div style="font-size:9px;color:var(--muted);margin-bottom:4px">${nomLc}</div>
-        <div style="font-size:11px">
+        <div style="font-size:8px;color:var(--muted);margin-bottom:3px">${nomLc}</div>
+        <div style="font-size:10px">
           <div>🎯 Conv.: <span style="color:var(--green);font-weight:700">${rp.pGolL.toFixed(1)}%</span></div>
           <div>🧤 Para rival: <span style="color:var(--blue);font-weight:700">${rp.pParaV.toFixed(1)}%</span></div>
         </div>
       </div>
       <div class="card-dark">
-        <div style="font-size:9px;color:var(--muted);margin-bottom:4px">${nomVc}</div>
-        <div style="font-size:11px">
+        <div style="font-size:8px;color:var(--muted);margin-bottom:3px">${nomVc}</div>
+        <div style="font-size:10px">
           <div>🎯 Conv.: <span style="color:var(--red);font-weight:700">${rp.pGolV.toFixed(1)}%</span></div>
           <div>🧤 Para rival: <span style="color:var(--blue);font-weight:700">${rp.pParaL.toFixed(1)}%</span></div>
         </div>
       </div>
     </div>
     <div id="ejs-wrap" style="display:none">${ejemplosHTML}</div>
-    <div style="display:flex;gap:8px;margin-top:4px">
+    <div style="display:flex;gap:6px;margin-top:3px">
       <button class="btn-ghost" onclick="toggleEjs()">▼ Secuencias ejemplo</button>
       <button class="btn-ghost-purple" onclick="ejecutarPenales()">🔁 Resimular</button>
     </div>
@@ -562,27 +651,32 @@ function renderPartidos() {
     "PARTIDOS " + (partidos.length > 0 ? "("+partidos.length+")" : "");
   if(partidos.length === 0) {
     document.getElementById("lista-partidos").innerHTML =
-      '<div style="color:var(--muted);font-size:10px">No hay partidos disponibles</div>';
+      '<div style="color:var(--muted);font-size:9px">No hay partidos en esta fecha o fase</div>';
     return;
   }
   document.getElementById("lista-partidos").innerHTML = partidos.map((p,i) => {
     const activo = partidoActivo &&
       partidoActivo.local===p.local && partidoActivo.visita===p.visita;
     const esHoy = p.fecha === today;
+    const estadoIcon = p.estado === "FINISHED" ? "✅" :
+                       p.estado === "IN_PLAY" ? "⚡" : "";
     return `<button class="match-btn${activo?" active":""}" onclick="selPartido(${i})">
       <div class="row">
         <span style="font-weight:700">
           ${p.local} <span style="opacity:.5">vs</span> ${p.visita}
         </span>
-        ${esHoy?`<span class="hoy-badge">HOY</span>`:""}
+        <span>
+          ${esHoy?`<span class="hoy-badge">HOY</span>`:""}
+          ${estadoIcon}
+        </span>
       </div>
-      <div class="sub">${p.grupo}${p.hora?" · "+p.hora:""}</div>
+      <div class="sub">📅 ${p.fecha} ${p.hora} ${p.grupo?"· "+p.grupo:""}</div>
     </button>`;
   }).join("");
 }
 
 // ═══════════════════════════════════════════════════════════
-// RENDER TABLA EQUIPOS
+// RENDER TABLA
 // ═══════════════════════════════════════════════════════════
 function renderTabla() {
   const rows = Object.entries(modelo)
@@ -608,24 +702,18 @@ function renderTabla() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// MOSTRAR ERROR EN PANTALLA
+// MOSTRAR ERROR
 // ═══════════════════════════════════════════════════════════
 function mostrarError(mensaje, detalle = "", solucion = "") {
   document.getElementById("panel-resultado").innerHTML = `
     <div class="card" style="border-color:var(--red);">
-      <div style="text-align:center;padding:20px 10px;">
+      <div style="text-align:center;padding:15px 10px;">
         <div class="error-icon">🚫</div>
         <div class="error-msg">${mensaje}</div>
-        ${detalle ? `<div style="color:var(--muted);font-size:10px;margin-top:8px;">${detalle}</div>` : ""}
-        ${solucion ? `<div style="color:var(--blue);font-size:10px;margin-top:12px;">💡 ${solucion}</div>` : ""}
-        <div style="margin-top:16px;font-size:10px;color:var(--muted);">
-          <div>📌 Posibles causas:</div>
-          <div style="text-align:left;display:inline-block;margin-top:6px;line-height:1.8;">
-            • ${mensaje.includes("403") ? "Tu plan gratuito no incluye el Mundial 2026" : "Sin conexión a internet"}<br>
-            • ${mensaje.includes("403") ? "Necesitas una suscripción de pago" : "El servidor de la API no responde"}<br>
-            • ${mensaje.includes("403") ? "Prueba con otra competición (ej: 'CL' para Champions)" : "CORS bloquea la petición (usa Firefox o Chrome)"}
-          </div>
-          <div style="margin-top:12px;color:var(--blue);">
+        ${detalle ? `<div style="color:var(--muted);font-size:9px;margin-top:6px;">${detalle}</div>` : ""}
+        ${solucion ? `<div style="color:var(--blue);font-size:9px;margin-top:10px;">💡 ${solucion}</div>` : ""}
+        <div style="margin-top:12px;font-size:9px;color:var(--muted);">
+          <div style="margin-top:8px;color:var(--blue);">
             🔄 Presiona el botón verde para reintentar
           </div>
         </div>
@@ -635,13 +723,18 @@ function mostrarError(mensaje, detalle = "", solucion = "") {
 }
 
 // ═══════════════════════════════════════════════════════════
-// 🔧 FUNCIÓN PRINCIPAL: PROBAR PROXIES AUTOMÁTICAMENTE
+// ACTUALIZAR DATOS
 // ═══════════════════════════════════════════════════════════
-async function probarProxies() {
+async function actualizar() {
   const btn = document.getElementById("btn-actualizar");
-  btn.disabled = true; btn.textContent = "⏳ PROBANDO PROXIES...";
+  btn.disabled = true; btn.textContent = "⏳ DESCARGANDO...";
   clearLog();
-  log("[◉] Probando " + PROXIES.length + " proxies CORS...", "info");
+
+  const fechaStr = obtenerFechaDesdeSelector();
+  const faseStr = faseActual ? `&stage=${faseActual}` : "";
+
+  log("[◉] Conectando a football-data.org...", "info");
+  log(`[→] Fecha: ${fechaStr}${faseActual ? " · Fase: "+faseActual : ""}`, "info");
 
   // Limpiar datos previos
   modelo = {};
@@ -654,126 +747,95 @@ async function probarProxies() {
   document.getElementById("badge-lambda").style.display = "none";
   document.getElementById("meta-txt").style.display = "none";
 
-  let ultimoError = null;
+  try {
+    const url = PROXY + encodeURIComponent(
+      `${BASE_URL}/matches?dateFrom=${fechaStr}&dateTo=${fechaStr}${faseStr}`
+    );
+    log(`[→] GET ${url}`, "muted");
 
-  for (let i = 0; i < PROXIES.length; i++) {
-    const proxy = PROXIES[i];
-    log(`[→] Probando proxy ${i+1}/${PROXIES.length}: ${proxy.name}`, "info");
-    
-    try {
-      const url = proxy.url + encodeURIComponent(BASE_URL + "/matches");
-      log(`[→] GET ${url}`, "muted");
+    const resp = await fetch(url, { headers: { "X-Auth-Token": API_KEY } });
 
-      const resp = await fetch(url, {
-        headers: { "X-Auth-Token": API_KEY }
-      });
-
-      // Si la respuesta es exitosa (200), procesar datos
-      if (resp.ok) {
-        const data = await resp.json();
-        const matches = data.matches || [];
-        log(`[✓] Proxy ${proxy.name} FUNCIONA!`, "ok");
-        log(`[✓] ${matches.length} partidos descargados`, "ok");
-
-        const { totalGoles, totalPartidos } = parsearMatches(matches);
-
-        if (Object.keys(modelo).length < 4) {
-          throw new Error("Datos insuficientes");
-        }
-
-        const today = new Date().toISOString().slice(0,10);
-        const hoy = partidos.filter(p => p.fecha === today);
-        const fechaStr = new Date().toLocaleString("es-MX", {
-          timeZone: "America/Mexico_City"
-        });
-
-        log(`[✓] ${Object.keys(modelo).length} equipos · λ=${lambda.toFixed(3)} goles/partido`, "ok");
-        log(`[✓] ${partidos.length} partidos` + (hoy.length > 0 ? ` · ${hoy.length} HOY` : " (próximos)"), "ok");
-        log("──────────────────────────────────────", "muted");
-        log("▶ Selecciona un partido para simular", "normal");
-
-        // Actualizar UI con éxito
-        document.getElementById("badge-real").style.display = "inline-block";
-        document.getElementById("badge-lambda").style.display = "inline-block";
-        document.getElementById("badge-lambda").textContent = "λ=" + lambda.toFixed(3);
-        document.getElementById("meta-txt").style.display = "inline";
-        document.getElementById("meta-txt").textContent =
-          totalPartidos + " partidos · " + totalGoles + " goles · " + fechaStr;
-        document.getElementById("btn-tabla").style.display = "inline-block";
-
-        renderPartidos();
-        renderTabla();
-        document.getElementById("panel-resultado").innerHTML =
-          `<div class="placeholder"><div class="icon">⚽</div>
-           <div>Selecciona un partido para simular</div>`;
-
-        btn.disabled = false;
-        btn.textContent = "🔄 ACTUALIZAR DATOS";
-        return true;
-      } else {
-        // Intentar leer el mensaje de error
-        let errMsg = "";
-        try {
-          const err = await resp.json();
-          errMsg = err.message || err.error || "";
-        } catch(e) {}
-        log(`[✗] Proxy ${proxy.name} falló: HTTP ${resp.status} ${errMsg}`, "error");
-        ultimoError = { status: resp.status, message: errMsg, proxy: proxy.name };
-      }
-    } catch (err) {
-      log(`[✗] Proxy ${proxy.name} falló: ${err.message}`, "error");
-      ultimoError = { status: "network", message: err.message, proxy: proxy.name };
+    if (!resp.ok) {
+      let errMsg = "";
+      try { const err = await resp.json(); errMsg = err.message || err.error || ""; } catch(e) {}
+      throw new Error(`HTTP ${resp.status}${errMsg ? ": "+errMsg : ""}`);
     }
-  }
 
-  // Si llegamos aquí, todos los proxies fallaron
-  btn.disabled = false;
-  btn.textContent = "🔄 ACTUALIZAR DATOS";
+    const data = await resp.json();
+    const matches = data.matches || [];
+    log(`[✓] ${matches.length} partidos descargados`, "ok");
 
-  // Mostrar mensaje de error final
-  let mensajeError = "❌ No se pudo conectar con la API";
-  let detalleError = "Se probaron " + PROXIES.length + " proxies CORS y todos fallaron.";
-  let solucion = "";
+    const { totalGoles, totalPartidos } = parsearMatches(matches);
 
-  if (ultimoError) {
-    detalleError += `\nÚltimo error: ${ultimoError.proxy} → ${ultimoError.status}`;
-    
-    if (ultimoError.status === 403) {
+    if (Object.keys(modelo).length < 4) {
+      throw new Error("Datos insuficientes. El Mundial aún no ha comenzado o no hay partidos finalizados.");
+    }
+
+    const hoy = partidos.filter(p => p.fecha === new Date().toISOString().slice(0,10));
+    const fechaStrDisplay = new Date(fechaStr).toLocaleDateString("es-MX", {
+      timeZone: "America/Mexico_City"
+    });
+
+    log(`[✓] ${Object.keys(modelo).length} equipos · λ=${lambda.toFixed(3)} goles/partido`, "ok");
+    log(`[✓] ${partidos.length} partidos · ${fechaStrDisplay}`, "ok");
+    if (partidos.length > 0) {
+      const estados = partidos.filter(p => p.estado === "IN_PLAY").length;
+      if (estados > 0) log(`[⚡] ${estados} partido(s) en vivo`, "info");
+    }
+    log("──────────────────────────────────────", "muted");
+    log("▶ Selecciona un partido para simular", "normal");
+
+    document.getElementById("badge-real").style.display = "inline-block";
+    document.getElementById("badge-lambda").style.display = "inline-block";
+    document.getElementById("badge-lambda").textContent = "λ=" + lambda.toFixed(3);
+    document.getElementById("meta-txt").style.display = "inline";
+    document.getElementById("meta-txt").textContent =
+      totalPartidos + " partidos históricos · " + totalGoles + " goles · " + fechaStrDisplay;
+    document.getElementById("btn-tabla").style.display = "inline-block";
+
+    renderPartidos();
+    renderTabla();
+    document.getElementById("panel-resultado").innerHTML =
+      `<div class="placeholder"><div class="icon">⚽</div>
+       <div>Selecciona un partido para simular</div>`;
+
+  } catch (err) {
+    log(`[✗] ERROR: ${err.message}`, "error");
+
+    let mensajeError = "❌ No se pudieron cargar los datos";
+    let detalleError = "";
+    let solucion = "";
+
+    if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError")) {
+      mensajeError = "🌐 Error de conexión";
+      detalleError = "No se pudo conectar con el servidor de football-data.org";
+      solucion = "Verifica tu conexión a internet.";
+    } else if (err.message.includes("403")) {
       mensajeError = "🔒 Acceso denegado (403)";
-      detalleError = "Tu plan gratuito de football-data.org no tiene acceso al Mundial 2026.";
-      solucion = "Prueba con otra competición como 'CL' (Champions League) o contrata un plan de pago.";
-    } else if (ultimoError.status === 404) {
+      detalleError = "Tu plan gratuito no tiene acceso al Mundial 2026.";
+      solucion = "Prueba con 'CL' (Champions League) o contrata un plan de pago.";
+    } else if (err.message.includes("404")) {
       mensajeError = "📭 Competición no encontrada (404)";
-      detalleError = "El código 'WC' no es válido para el Mundial 2026 en tu plan.";
+      detalleError = "El código 'WC' no es válido para el Mundial 2026.";
       solucion = "Prueba con 'CL' para Champions League o 'PL' para Premier League.";
-    } else if (ultimoError.status === 429) {
+    } else if (err.message.includes("429")) {
       mensajeError = "⏳ Límite de peticiones (429)";
       detalleError = "Has superado el límite de peticiones del plan gratuito.";
       solucion = "Espera 1 minuto y vuelve a intentar.";
-    } else if (ultimoError.status === "network") {
-      mensajeError = "🌐 Error de red";
-      detalleError = "No se pudo establecer conexión con ningún servidor.";
-      solucion = "Verifica tu conexión a internet o prueba con otro navegador.";
+    } else {
+      mensajeError = "⚠️ Error desconocido";
+      detalleError = err.message;
     }
-  } else {
-    mensajeError = "❌ Error desconocido";
-    detalleError = "No se pudo determinar la causa del error.";
+
+    log(`[!] ${mensajeError}`, "error");
+    if (solucion) log(`[!] ${solucion}`, "warn");
+
+    mostrarError(mensajeError, detalleError, solucion);
+    renderPartidos();
   }
 
-  log(`[✗] TODOS LOS PROXIES FALLARON`, "error");
-  log(`[!] ${mensajeError}`, "error");
-  if (solucion) log(`[!] ${solucion}`, "warn");
-
-  mostrarError(mensajeError, detalleError, solucion);
-  renderPartidos();
-  return false;
-}
-
-// ═══════════════════════════════════════════════════════════
-// ACCIÓN: ACTUALIZAR (llama a probarProxies)
-// ═══════════════════════════════════════════════════════════
-async function actualizar() {
-  await probarProxies();
+  btn.disabled = false;
+  btn.textContent = "🔄 ACTUALIZAR DATOS";
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -788,10 +850,9 @@ function selPartido(i) {
     log("[!] Datos de equipos no disponibles", "warn");
     return;
   }
-  log("\n[⚡] "+modelo[p.local].nom+" vs "+modelo[p.visita].nom, "ok");
+  log(`\n[⚡] ${modelo[p.local].nom} vs ${modelo[p.visita].nom}`, "ok");
   resActivo = simular(p.local, p.visita);
-  log("[✓] Marcador más probable: "+resActivo.top5[0].m+
-    " ("+resActivo.top5[0].p.toFixed(1)+"%)", "ok");
+  log(`[✓] Marcador más probable: ${resActivo.top5[0].m} (${resActivo.top5[0].p.toFixed(1)}%)`, "ok");
   renderPartidos();
   renderResultado();
 }
@@ -801,7 +862,7 @@ function ejecutarPenales() {
   log("[⚽] Simulando tanda de penales (n=50,000)...", "info");
   resPenActivo = simularPenales(partidoActivo.local, partidoActivo.visita);
   const nomL = modelo[partidoActivo.local].nom.split(" ")[0];
-  log("[✓] "+nomL+" avanza: "+resPenActivo.pL.toFixed(1)+"%", "ok");
+  log(`[✓] ${nomL} avanza: ${resPenActivo.pL.toFixed(1)}%`, "ok");
   renderResultado();
 }
 
@@ -834,8 +895,13 @@ function toggleTabla() {
 // INICIO
 // ═══════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', function() {
+  // Configurar fecha por defecto
+  const custom = document.getElementById("fecha-custom");
+  custom.value = new Date().toISOString().slice(0,10);
+  custom.classList.add("hidden");
+
   log("▶ Presiona 'ACTUALIZAR DATOS' para conectar con la API", "normal");
-  log("▶ Se probarán " + PROXIES.length + " proxies automáticamente", "muted");
+  log("▶ Usa los filtros para ver partidos de otras fechas o fases", "muted");
 });
 </script>
 </body>
